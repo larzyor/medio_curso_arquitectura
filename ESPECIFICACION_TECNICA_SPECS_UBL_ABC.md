@@ -1,3 +1,5 @@
+#ALUMNO: Salazar Ramos Jhordy Antonio
+
 # DOCUMENTO DE ESPECIFICACIÓN TÉCNICA Y ARQUITECTURA (SPEC-FIRST)
 ## Sistema de Facturación Electrónica UBL 2.1 y Migración Legada
 **Cliente:** ABC Software Corp  
