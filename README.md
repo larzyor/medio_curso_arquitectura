@@ -62,9 +62,4 @@ La especificación técnica exhaustiva con todos los diagramas y matrices se enc
 
 ---
 
-## 🚀 Guía de Presentación del Examen
 
-| Formato de Entrega | Instrucciones de Presentación |
-| :--- | :--- |
-| **Entrega en PDF / Word** | Abre [ESPECIFICACION_TECNICA_UBL_ABC.md](file:///C:/Users/larze/.gemini/antigravity/brain/cf733cbf-7f4a-4d19-86bb-d6e9acf57d58/ESPECIFICACION_TECNICA_UBL_ABC.md), copia el contenido a Microsoft Word o Google Docs, agrega la carátula con tus datos y expórtalo como PDF. |
-| **Repositorio GitHub** | Sube este `README.md` a la raíz del repositorio y coloca el documento técnico en la carpeta `/docs`. GitHub renderizará automáticamente las tablas y los diagramas Mermaid. |
