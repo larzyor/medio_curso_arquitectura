@@ -1,32 +1,19 @@
-using System.Collections.Concurrent;
 using ABC.Billing.Core.Domain.Entities;
+using ABC.Billing.Core.Domain.Enums;
 using ABC.Billing.Core.Ports.Outbound;
 
 namespace ABC.Billing.Infrastructure.Persistence.Repositories;
 
 /// <summary>
-/// Adaptador de persistencia SQL (SQLite embebido para Windows/Android o PostgreSQL central).
+/// ESQUELETO del adaptador SQL (fase 2). Implementa el mismo puerto que el repositorio en memoria, por lo que
+/// reemplazarlo no toca el dominio ni los casos de uso. El esquema propuesto está en docs/sql/001_schema.sql.
 /// </summary>
-public class SqlInvoiceRepository : IInvoiceRepository
+public sealed class SqlInvoiceRepository : IInvoiceRepository
 {
-    private static readonly ConcurrentDictionary<Guid, Invoice> _db = new();
-    private static readonly ConcurrentDictionary<string, int> _correlativos = new();
+    private const string Pendiente = "Fase 2: implementar con ADO.NET/EF Core sobre el esquema de docs/sql/001_schema.sql.";
 
-    public Task GuardarAsync(Invoice invoice, CancellationToken cancellationToken = default)
-    {
-        _db[invoice.Id] = invoice;
-        return Task.CompletedTask;
-    }
-
-    public Task<Invoice?> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        _db.TryGetValue(id, out var invoice);
-        return Task.FromResult(invoice);
-    }
-
-    public Task<int> ObtenerSiguienteCorrelativoAsync(string serie, CancellationToken cancellationToken = default)
-    {
-        int nuevoCorrelativo = _correlativos.AddOrUpdate(serie, 1, (_, actual) => actual + 1);
-        return Task.FromResult(nuevoCorrelativo);
-    }
+    public Task GuardarAsync(Invoice invoice, CancellationToken ct = default) => throw new NotImplementedException(Pendiente);
+    public Task<Invoice?> ObtenerAsync(Guid id, CancellationToken ct = default) => throw new NotImplementedException(Pendiente);
+    public Task<IReadOnlyList<Invoice>> ListarAsync(string? serie, EstadoComprobante? estado, DateOnly? desde, DateOnly? hasta, CancellationToken ct = default)
+        => throw new NotImplementedException(Pendiente);
 }

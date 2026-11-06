@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<Invoice xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
+  <ext:UBLExtensions>
+    <ext:UBLExtension>
+      <ext:ExtensionContent><Signature Id="SignABC" xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" /><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" /><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" /><DigestValue>piOcvFHq66gYiHiL5OM42Obl83M=</DigestValue></Reference></SignedInfo><SignatureValue>PGNix5L+Qi3eb6tj3NaRHTiWE/z6BNTDRCr9EdqKq9OuiSTpUbH/Q8nkWfCtb2dH14lqft5EC+KyO4Ax7hJjSIYqOIqQ+mX1cmAWMjKWAUK1rWoxBkc4aTRv4BsrPpVCNb3EQDS5ale3zu4EdrBY6PCYAiNw3W63nLf0Kyg6zg1U7HTLLP9vMW3ufokj5g9xpqJ1Lrpt8yYEpUR37HYQrwTWf3P4DiQ/CpFFrbiisxzK/Cp0+Ca332CMeE6LKzqe+xMAxse1i58+lEsy89nUgZHfMHJmekwebCnc1upBLHaXjeINkzeT3E4s38yb5UzNbGJ4QWF+aNLiSXfC5OOMSg==</SignatureValue><KeyInfo><X509Data><X509Certificate>MIIDSDCCAjCgAwIBAgIIdlSXEiC8rpkwDQYJKoZIhvcNAQELBQAwZDELMAkGA1UEBhMCUEUxGjAYBgNVBAoTEUFCQyBTb2Z0d2FyZSBDb3JwMRQwEgYDVQQLEwsyMDYwMDAwMDAxMzEjMCEGA1UEAxMaQUJDIFNvZnR3YXJlIENvcnAgKFBSVUVCQSkwHhcNMjYxMTAzMjI1NjI1WhcNMjcxMTA0MjI1NjI1WjBkMQswCQYDVQQGEwJQRTEaMBgGA1UEChMRQUJDIFNvZnR3YXJlIENvcnAxFDASBgNVBAsTCzIwNjAwMDAwMDEzMSMwIQYDVQQDExpBQkMgU29mdHdhcmUgQ29ycCAoUFJVRUJBKTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAND2ME279AT8kDGo/fCG0C/q4o/xrKLih2C4l2q+sNzpdevsWj1A50vkIpDG/bdVKMQaOB+Ws8c0nFVa97pVr1jTajAG9r3hVaOPHk8rmG0qwi5Y7SzPB5Tpk3wo1eG4Q27trOvMHJdS8X+1z6XrETqB/WLVFTjDiaQsQPPLgnc1lFhy8Gz+a2WhpLA9PdpHqe/oUcAIox9DNXAvmfXiDu5EbBtqU+yky009cNAm7a8WouoqyYf7hbEBZEJghuerFg5IE0s8h/df14UMjy2hTdUfG+7Rq8Zh/zAb1DtTwBMUc+ZPkjRuu81PIFmbXvHBFjmJtqeWgaiDQCls37crV1MCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEABNz3Q/z3Hv5PsLaec1Q7YoXISrAXvKvKr5ZYD/3WCk2+/5H8WFa9XgJrFYBRBHQy08s1S/oCbLFj6/7DePtlKJWnacITrx5hh9nCDidOhdyeZAOdyhKdJNU8LJhWwN+xZyfXaBfeqK/Jd7P8NIvmEMNL6sBFKWceygwwO/i5gcgF60Rz3FQy2aEyEBzIMgoyrR/HwhNdRaU5kYRAafHSkeQt0IGbvays7FmxjrrApec/ZdCrrSaBTQ49NMgw4UK6eI+vYo+/H4wnG0k9QM6z118wrRevE7+elCYaCQ5HdVW6ZXpknBJrh9sowEzrVxk56b9i2iEM4y0vj/T8gz+Crg==</X509Certificate></X509Data></KeyInfo></Signature></ext:ExtensionContent>
+    </ext:UBLExtension>
+  </ext:UBLExtensions>
+  <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID>2.0</cbc:CustomizationID>
+  <cbc:ProfileID schemeName="Tipo de Operacion" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo51">0101</cbc:ProfileID>
+  <cbc:ID>B001-1</cbc:ID>
+  <cbc:IssueDate>2026-11-03</cbc:IssueDate>
+  <cbc:IssueTime>10:15:00</cbc:IssueTime>
+  <cbc:InvoiceTypeCode listName="Tipo de Documento" listAgencyName="PE:SUNAT" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01">03</cbc:InvoiceTypeCode>
+  <cbc:Note languageLocaleID="1000">SON: CUARENTA Y DOS Y 48/100 SOLES</cbc:Note>
+  <cbc:DocumentCurrencyCode listID="ISO 4217 Alpha" listName="Currency" listAgencyName="United Nations Economic Commission for Europe">PEN</cbc:DocumentCurrencyCode>
+  <cac:Signature>
+    <cbc:ID>SignABC</cbc:ID>
+    <cac:SignatoryParty>
+      <cac:PartyIdentification>
+        <cbc:ID>20600000013</cbc:ID>
+      </cac:PartyIdentification>
+      <cac:PartyName>
+        <cbc:Name>ABC SOFTWARE CORP S.A.C.</cbc:Name>
+      </cac:PartyName>
+    </cac:SignatoryParty>
+    <cac:DigitalSignatureAttachment>
+      <cac:ExternalReference>
+        <cbc:URI>#SignABC</cbc:URI>
+      </cac:ExternalReference>
+    </cac:DigitalSignatureAttachment>
+  </cac:Signature>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cac:PartyName>
+        <cbc:Name>ABC Abarrotes</cbc:Name>
+      </cac:PartyName>
+      <cac:PartyTaxScheme>
+        <cbc:RegistrationName>ABC SOFTWARE CORP S.A.C.</cbc:RegistrationName>
+        <cbc:CompanyID schemeID="6" schemeName="Documento de Identidad" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06">20600000013</cbc:CompanyID>
+        <cac:RegistrationAddress>
+          <cbc:AddressTypeCode listName="Establecimientos anexos" listAgencyName="PE:SUNAT">0000</cbc:AddressTypeCode>
+        </cac:RegistrationAddress>
+        <cac:TaxScheme>
+          <cbc:ID>-</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cac:PartyTaxScheme>
+        <cbc:RegistrationName>JUAN PEREZ RAMOS</cbc:RegistrationName>
+        <cbc:CompanyID schemeID="1" schemeName="Documento de Identidad" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06">45678912</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>-</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="PEN">6.48</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="PEN">36.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="PEN">6.48</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
+        <cac:TaxScheme>
+          <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">1000</cbc:ID>
+          <cbc:Name>IGV</cbc:Name>
+          <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="PEN">36.00</cbc:LineExtensionAmount>
+    <cbc:TaxInclusiveAmount currencyID="PEN">42.48</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="PEN">42.48</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="NIU" unitCodeListID="UN/ECE rec 20" unitCodeListAgencyName="United Nations Economic Commission for Europe">2.00</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="PEN">36.00</cbc:LineExtensionAmount>
+    <cac:PricingReference>
+      <cac:AlternativeConditionPrice>
+        <cbc:PriceAmount currencyID="PEN">21.24</cbc:PriceAmount>
+        <cbc:PriceTypeCode listName="Tipo de Precio" listAgencyName="PE:SUNAT" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
+      </cac:AlternativeConditionPrice>
+    </cac:PricingReference>
+    <cac:TaxTotal>
+      <cbc:TaxAmount currencyID="PEN">6.48</cbc:TaxAmount>
+      <cac:TaxSubtotal>
+        <cbc:TaxableAmount currencyID="PEN">36.00</cbc:TaxableAmount>
+        <cbc:TaxAmount currencyID="PEN">6.48</cbc:TaxAmount>
+        <cac:TaxCategory>
+          <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
+          <cbc:Percent>18.00</cbc:Percent>
+          <cbc:TaxExemptionReasonCode listName="Afectacion del IGV" listAgencyName="PE:SUNAT" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
+          <cac:TaxScheme>
+            <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">1000</cbc:ID>
+            <cbc:Name>IGV</cbc:Name>
+            <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+          </cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Description>Arroz extra 5 kg</cbc:Description>
+      <cac:SellersItemIdentification>
+        <cbc:ID>ARR-5KG</cbc:ID>
+      </cac:SellersItemIdentification>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="PEN">18.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+</Invoice>

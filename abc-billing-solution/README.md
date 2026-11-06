@@ -1,41 +1,37 @@
-# ABC Software Corp — Facturación Electrónica UBL 2.1 (Spec-First)
+# ABC Billing: facturación electrónica UBL 2.1 / SUNAT (versión corregida)
 
-Este proyecto implementa la arquitectura de software y el esqueleto de especificaciones técnicas (**Spec-First**) para la emisión de comprobantes electrónicos con valor legal ante la **SUNAT** (Perú) bajo el estándar **OASIS UBL 2.1**, así como la migración y trazabilidad del software de almacén informal legado.
+Código de referencia de la especificación Spec-First. **La especificación está en
+[`docs/ESPECIFICACION_TECNICA_UBL_ABC.md`](docs/ESPECIFICACION_TECNICA_UBL_ABC.md)** y el contrato de la API en
+[`docs/openapi.yaml`](docs/openapi.yaml).
 
----
+## Requisitos
 
-## 🏗️ Arquitectura de la Solución (MVC Desacoplado a Hexagonal)
+- .NET SDK 8.0. No usa paquetes NuGet de terceros (`NuGet.config` desactiva las fuentes remotas; bórralo si luego agregas paquetes).
 
-La solución sigue un diseño modular donde el **Monolito MVC** organiza las capas externas, mientras que el interior está desacoplado mediante **Puertos y Adaptadores (Arquitectura Hexagonal)**:
+## Probar
 
-```
-abc-billing-solution/
-├── src/
-│   ├── ABC.Billing.Core/                    # Dominio puro y Puertos de entrada/salida
-│   │   ├── Domain/                          # Entidades (Invoice, Customer), Value Objects (RucNumber con Módulo 11)
-│   │   └── Ports/                           # Contratos (IInvoiceRepository, IUblXmlGenerator, ISunatOseClient)
-│   ├── ABC.Billing.Infrastructure/          # Adaptadores (UblInvoice21XmlSerializer, Firma XAdES, SOAP SUNAT)
-│   ├── ABC.Billing.Presentation.Api/        # Controladores MVC y DTOs ('serie_numero')
-│   └── ABC.Billing.App.Client/              # Vistas multiplataforma (.NET MAUI)
-├── packaging/
-│   ├── windows-msi/                         # Configuración WiX Toolset para instalador nativo MSI
-│   └── android-apk/                         # Configuración Gradle para paquete APK Android
-└── docs/                                    # Especificaciones técnicas completas y normativas
+```bash
+# 64 comprobaciones: dominio, XML contra el XSD oficial, firma, CDR, migración, concurrencia
+dotnet run --project tests/ABC.Billing.SmokeTests docs/ejemplos
 ```
 
----
+## Ejecutar la API
 
-## 🔑 Puntos Clave del Examen
+```bash
+ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5099 dotnet run --project src/ABC.Billing.Presentation.Api
+```
 
-1. **Equivalencia de Identificadores (SUNAT vs UBL 2.1):**
-   * En Perú / SUNAT: **`serie_numero`** (ej: `F001-00000001`).
-   * En OASIS UBL 2.1: **`<cbc:ID>`** (`UBL-Invoice-2.1.xsd`).
-2. **Catálogo 08 de SUNAT (Tributos):**
-   * Código `1000` = IGV (18%).
-   * Código `7152` = ICBPER (Impuesto a las bolsas plásticas en abarrotes).
-   * Código `9997` / `9998` = Operaciones Exoneradas e Inafectas.
-3. **Validación Invariante de RUC:**
-   * Algoritmo Módulo 11 implementado en el Value Object `RucNumber`.
-4. **Distribución Multiplataforma:**
-   * Instalador nativo **`.msi`** para Windows Desktop.
-   * Paquete **`.apk`** para terminales POS Android.
+En Desarrollo los tokens son `dev-emisor-token` (rol emisor) y `dev-admin-token` (rol admin, para la migración).
+Fuera de Desarrollo configura `Auth__EmisorToken` y `Auth__AdminToken` (la API no arranca sin ellos).
+
+```bash
+curl -s -H "Authorization: Bearer dev-emisor-token" -H "Content-Type: application/json" \
+  -d '{"tipoComprobante":"01","cliente":{"tipoDocumento":"6","numeroDocumento":"20123456786","razonSocial":"BODEGA EL ÑANDÚ S.A.C."},"items":[{"descripcion":"Arroz 5 kg","unidadMedida":"NIU","cantidad":10,"valorUnitario":18.00,"afectacionIgv":"10"}]}' \
+  http://127.0.0.1:5099/api/v1/invoices
+```
+
+## Qué no está verificado
+
+- El envío real al servicio beta de SUNAT (el cliente SOAP se probó con un CDR de ejemplo).
+- El cliente MAUI y los empaquetados MSI/APK (son esqueletos).
+- Notas de crédito/débito, baja, resumen diario, ISC sistema 03 e IVAP: están en el contrato, no en el código.

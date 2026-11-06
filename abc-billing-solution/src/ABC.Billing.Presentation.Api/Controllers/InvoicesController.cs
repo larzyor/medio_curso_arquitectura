@@ -1,86 +1,72 @@
-using ABC.Billing.Core.Domain.Entities;
 using ABC.Billing.Core.Domain.Enums;
-using ABC.Billing.Core.Domain.Services;
-using ABC.Billing.Core.Domain.ValueObjects;
 using ABC.Billing.Core.Ports.Inbound;
+using ABC.Billing.Presentation.Api.DTOs;
 using ABC.Billing.Presentation.Api.DTOs.Requests;
 using ABC.Billing.Presentation.Api.DTOs.Responses;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ABC.Billing.Presentation.Api.Controllers;
 
 /// <summary>
-/// Controlador MVC para la gestión y emisión de facturación electrónica UBL 2.1.
+/// Capa MVC (controlador DELGADO): traduce HTTP ⇄ comandos y respuestas. No calcula impuestos, no asigna
+/// serie ni correlativo y no conoce SUNAT: todo eso vive en los casos de uso (puertos de entrada).
 /// </summary>
-public class InvoicesController
+[ApiController]
+[Route("api/v1/invoices")]
+[Authorize(Roles = "emisor")]
+public sealed class InvoicesController(
+    IEmitirFacturaUseCase emitir,
+    ITransmitirComprobanteUseCase transmitir,
+    IConsultarComprobanteUseCase consultar) : ControllerBase
 {
-    private readonly IEmitirFacturaUseCase _emitirFacturaUseCase;
-    private readonly TaxCalculatorService _taxCalculatorService;
-
-    public InvoicesController(IEmitirFacturaUseCase emitirFacturaUseCase, TaxCalculatorService taxCalculatorService)
+    [HttpPost]
+    [ProducesResponseType(typeof(InvoiceResponse), StatusCodes.Status201Created)]
+    public async Task<IActionResult> Crear([FromBody] CreateInvoiceRequest request, CancellationToken ct)
     {
-        _emitirFacturaUseCase = emitirFacturaUseCase;
-        _taxCalculatorService = taxCalculatorService;
+        var factura = await emitir.EmitirAsync(InvoiceRequestMapper.ToCommand(request), ct);
+        return CreatedAtAction(nameof(Obtener), new { id = factura.Id }, InvoiceResponse.From(factura));
     }
 
-    /// <summary>
-    /// POST /api/v1/invoices
-    /// Recibe el request, valida reglas SUNAT y emite el comprobante electrónico.
-    /// </summary>
-    public async Task<InvoiceResponse> CreateInvoiceAsync(CreateInvoiceRequest request, CancellationToken ct = default)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<InvoiceResponse>> Obtener(Guid id, CancellationToken ct)
+        => InvoiceResponse.From(await consultar.ObtenerAsync(id, ct));
+
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<InvoiceResponse>>> Listar(
+        [FromQuery] string? serie, [FromQuery] EstadoComprobante? estado,
+        [FromQuery] DateOnly? desde, [FromQuery] DateOnly? hasta, CancellationToken ct)
+        => Ok((await consultar.ListarAsync(serie, estado, desde, hasta, ct)).Select(InvoiceResponse.From).ToList());
+
+    /// <summary>XML UBL 2.1 firmado, en ISO-8859-1 tal como se envía a SUNAT.</summary>
+    [HttpGet("{id:guid}/xml")]
+    [Produces("application/xml")]
+    public async Task<IActionResult> ObtenerXml(Guid id, CancellationToken ct)
     {
-        // 1. Validar identificación y Módulo 11 si es RUC
-        if (request.Cliente.TipoDocumento == "6")
-        {
-            _ = new RucNumber(request.Cliente.NumeroDocumento); // Lanza ArgumentException si el dígito verificador es inválido
-        }
+        var inv = await consultar.ObtenerAsync(id, ct);
+        return File(inv.XmlFirmado ?? throw new ABC.Billing.Core.Domain.ConflictoException("El comprobante aún no tiene XML firmado."),
+            "application/xml; charset=ISO-8859-1", inv.NombreArchivo + ".xml");
+    }
 
-        // 2. Mapear DTO a Entidad de Dominio
-        var invoice = new Invoice
-        {
-            TipoComprobante = (TipoComprobante)int.Parse(request.TipoComprobante),
-            Series = string.IsNullOrEmpty(request.SerieNumero) 
-                ? new DocumentSeries("F001", 1) 
-                : DocumentSeries.Parse(request.SerieNumero),
-            Cliente = new Customer(
-                (TipoDocumentoIdentidad)int.Parse(request.Cliente.TipoDocumento),
-                request.Cliente.NumeroDocumento,
-                request.Cliente.RazonSocial,
-                request.Cliente.Direccion
-            ),
-            Items = request.Items.Select((item, index) => new InvoiceLine
-            {
-                LineNumber = index + 1,
-                CodigoProducto = item.Codigo,
-                Descripcion = item.Descripcion,
-                UnidadMedida = item.UnidadMedida,
-                Cantidad = item.Cantidad,
-                ValorUnitario = item.ValorUnitario,
-                AfectacionIgv = (AfectacionIgv)int.Parse(item.TipoAfectacionIgv),
-                AplicaIcbper = item.AplicaIcbper
-            }).ToList()
-        };
+    /// <summary>sendBill. 200 = SUNAT respondió con CDR; 202 = SUNAT no disponible, queda en contingencia.</summary>
+    [HttpPost("{id:guid}/transmit")]
+    [ProducesResponseType(typeof(TransmisionResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TransmisionResponse), StatusCodes.Status202Accepted)]
+    public async Task<IActionResult> Transmitir(Guid id, CancellationToken ct)
+    {
+        var r = await transmitir.TransmitirAsync(id, ct);
+        var cuerpo = TransmisionResponse.From(r);
+        return r.Estado == EstadoComprobante.EnContingencia ? Accepted(cuerpo) : Ok(cuerpo);
+    }
 
-        // 3. Aplicar reglas de cálculo tributario (Catálogo 08)
-        _taxCalculatorService.CalcularTotalesEImpuestos(invoice);
-
-        // 4. Ejecutar Caso de Uso (Generación UBL, Firma y envío a SUNAT)
-        var result = await _emitirFacturaUseCase.EmitirYTransmitirAsync(invoice, ct);
-
-        // 5. Retornar Response
-        return new InvoiceResponse
-        {
-            Id = result.Id,
-            SerieNumero = result.SerieNumero,
-            TipoComprobante = request.TipoComprobante,
-            FechaEmision = result.FechaEmision,
-            TotalOperacionesGravadas = result.TotalOperacionesGravadas,
-            TotalIgv = result.TotalIgv,
-            TotalIcbper = result.TotalIcbper,
-            ImporteTotalPagar = result.ImporteTotalPagar,
-            Estado = result.Estado,
-            DigestValue = result.DigestValue,
-            CdrRespuestaCodigo = result.CdrRespuestaCodigo,
-            MensajeSunat = result.CdrRespuestaCodigo == "0" ? "Comprobante aceptado por SUNAT." : "Comprobante observado o pendiente."
-        };
+    /// <summary>Constancia de Recepción (ZIP con R-&lt;nombre&gt;.xml) guardada tras el envío.</summary>
+    [HttpGet("{id:guid}/cdr")]
+    [Produces("application/zip")]
+    public async Task<IActionResult> ObtenerCdr(Guid id, CancellationToken ct)
+    {
+        var inv = await consultar.ObtenerAsync(id, ct);
+        return inv.CdrZip is { Length: > 0 } zip
+            ? File(zip, "application/zip", $"R-{inv.NombreArchivo}.zip")
+            : throw new ABC.Billing.Core.Domain.NoEncontradoException("El comprobante todavía no tiene CDR.");
     }
 }

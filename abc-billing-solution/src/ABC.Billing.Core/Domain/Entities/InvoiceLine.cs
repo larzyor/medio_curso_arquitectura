@@ -2,26 +2,42 @@ using ABC.Billing.Core.Domain.Enums;
 
 namespace ABC.Billing.Core.Domain.Entities;
 
-/// <summary>
-/// Representa una línea o ítem de la factura.
-/// Mapeo a cac:InvoiceLine en UBL-Invoice-2.1.xsd.
-/// </summary>
-public class InvoiceLine
+/// <summary>Ítem del comprobante (cac:InvoiceLine). Entradas del cliente + valores que calcula el dominio.</summary>
+public sealed class InvoiceLine
 {
-    public int LineNumber { get; set; }
-    public string CodigoProducto { get; set; } = string.Empty;
-    public string Descripcion { get; set; } = string.Empty;
-    public string UnidadMedida { get; set; } = "NIU"; // Catálogo 03: NIU = Unidad, KGM = Kilogramo
+    // ----- Entradas -----
+    public int NumeroLinea { get; set; }
+    public string CodigoProducto { get; set; } = "";
+    public string Descripcion { get; set; } = "";
+    public UnidadMedida UnidadMedida { get; set; } = UnidadMedida.NIU;
     public decimal Cantidad { get; set; }
-    public decimal ValorUnitario { get; set; } // Sin IGV
-    public decimal PrecioUnitario { get; set; } // Con IGV
 
-    // Tributos
+    /// <summary>Valor unitario SIN impuestos. En operaciones gratuitas es el valor referencial unitario.</summary>
+    public decimal ValorUnitario { get; set; }
     public AfectacionIgv AfectacionIgv { get; set; } = AfectacionIgv.GravadoOperacionOnerosa;
-    public decimal MontoIgv { get; set; }
-    public bool AplicaIcbper { get; set; } // Impuesto a la bolsa de plástico
-    public decimal MontoIcbper { get; set; } // Cantidad de bolsas * S/ 0.50
 
-    public decimal SubtotalSinImpuestos => Cantidad * ValorUnitario;
-    public decimal TotalLinea => SubtotalSinImpuestos + MontoIgv + MontoIcbper;
+    /// <summary>Catálogo 08. Null = el ítem no está afecto al ISC.</summary>
+    public SistemaIsc? SistemaIsc { get; set; }
+    /// <summary>Tasa del ISC en porcentaje (sistema al valor), p. ej. 10 = 10 %.</summary>
+    public decimal TasaIsc { get; set; }
+    /// <summary>Monto fijo por unidad (sistema de monto fijo).</summary>
+    public decimal MontoFijoIsc { get; set; }
+
+    /// <summary>El ítem es una bolsa de plástico afecta al ICBPER (cantidad = número de bolsas).</summary>
+    public bool AplicaIcbper { get; set; }
+
+    // ----- Calculados (TaxCalculatorService) -----
+    public decimal ValorVenta { get; set; }
+    public decimal ValorReferencialTotal { get; set; }
+    public decimal MontoIsc { get; set; }
+    public decimal BaseIgv { get; set; }
+    public decimal MontoIgv { get; set; }
+    public decimal MontoIcbper { get; set; }
+    public decimal TarifaIcbper { get; set; }
+    public decimal PrecioUnitarioConImpuestos { get; set; }
+
+    public void LimpiarCalculo()
+    {
+        ValorVenta = ValorReferencialTotal = MontoIsc = BaseIgv = MontoIgv = MontoIcbper = TarifaIcbper = PrecioUnitarioConImpuestos = 0m;
+    }
 }

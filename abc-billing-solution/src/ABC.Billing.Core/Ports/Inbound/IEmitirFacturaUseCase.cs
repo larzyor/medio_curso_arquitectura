@@ -1,21 +1,10 @@
+using ABC.Billing.Core.Application.Commands;
 using ABC.Billing.Core.Domain.Entities;
 
 namespace ABC.Billing.Core.Ports.Inbound;
 
 public interface IEmitirFacturaUseCase
 {
-    Task<Invoice> EmitirYTransmitirAsync(Invoice invoice, CancellationToken cancellationToken = default);
+    /// <summary>Asigna serie-correlativo, calcula tributos, genera el XML UBL 2.1, lo valida contra el XSD, lo firma y lo guarda.</summary>
+    Task<Invoice> EmitirAsync(EmitirFacturaCommand comando, CancellationToken ct = default);
 }
-
-public interface IMigrarDatosLegadosUseCase
-{
-    Task<int> MigrarLoteAsync(IEnumerable<LegacyMovementRecord> registros, CancellationToken cancellationToken = default);
-}
-
-public record LegacyMovementRecord(
-    string Fecha,
-    decimal Ingreso,
-    decimal Salida,
-    string Producto,
-    string NroDocumento
-);

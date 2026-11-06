@@ -3,40 +3,46 @@ using ABC.Billing.Core.Domain.ValueObjects;
 
 namespace ABC.Billing.Core.Domain.Entities;
 
-/// <summary>
-/// Entidad raíz agregada (Aggregate Root) del comprobante electrónico.
-/// </summary>
-public class Invoice
+/// <summary>Raíz agregada del comprobante electrónico (factura o boleta). serie_numero SUNAT = cbc:ID UBL.</summary>
+public sealed class Invoice
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public TipoComprobante TipoComprobante { get; set; }
+    public TipoComprobante TipoComprobante { get; set; } = TipoComprobante.Factura;
+    public TipoOperacion TipoOperacion { get; set; } = TipoOperacion.VentaInterna;
     public DocumentSeries Series { get; set; } = null!;
-    
-    /// <summary>
-    /// Identificador peruano que el profesor mencionó: 'serie_numero'
-    /// En UBL 2.1 se mapea directamente al elemento '<cbc:ID>'.
-    /// </summary>
     public string SerieNumero => Series.SerieNumero;
 
-    public DateTime FechaEmision { get; set; } = DateTime.UtcNow.AddHours(-5); // UTC-5 Hora Perú
-    public TipoMoneda Moneda { get; set; } = TipoMoneda.PEN;
-
+    public required Emisor Emisor { get; set; }
     public Customer Cliente { get; set; } = null!;
+    public DateTime FechaEmision { get; set; }
+    public TipoMoneda Moneda { get; set; } = TipoMoneda.PEN;
     public List<InvoiceLine> Items { get; set; } = [];
-    public List<TaxSubtotal> Tributos { get; set; } = [];
 
-    // Totales calculados
-    public decimal TotalOperacionesGravadas { get; set; }
+    // ----- Totales calculados -----
+    public List<TaxSubtotal> Tributos { get; set; } = [];
+    public decimal TotalOperacionesGravadas { get; set; }      // valor de venta sin ISC
     public decimal TotalOperacionesExoneradas { get; set; }
     public decimal TotalOperacionesInafectas { get; set; }
+    public decimal TotalExportacion { get; set; }
+    public decimal TotalOperacionesGratuitas { get; set; }     // valor referencial; NO se cobra
+    public decimal BaseImponibleIgv { get; set; }              // gravadas + ISC
     public decimal TotalIgv { get; set; }
+    public decimal TotalIsc { get; set; }
     public decimal TotalIcbper { get; set; }
-    public decimal ImporteTotalPagar { get; set; }
+    public decimal TotalIgvGratuitas { get; set; }             // informativo; excluido del total a pagar
+    public decimal TotalValorVenta { get; set; }               // cbc:LineExtensionAmount
+    public decimal TotalPrecioVenta { get; set; }              // cbc:TaxInclusiveAmount
+    public decimal TotalTributos { get; set; }                 // cac:TaxTotal/cbc:TaxAmount
+    public decimal ImporteTotalPagar { get; set; }             // cbc:PayableAmount
 
-    // Estados de envío y trazabilidad SUNAT
-    public string Estado { get; set; } = "PENDIENTE";
-    public string? DigestValue { get; set; } // Hash SHA-256 de la firma
-    public string? SignatureValue { get; set; }
-    public string? CdrXmlBase64 { get; set; }
-    public string? CdrRespuestaCodigo { get; set; } // "0" = Aceptado
+    // ----- Ciclo de vida y trazabilidad SUNAT -----
+    public EstadoComprobante Estado { get; set; } = EstadoComprobante.Pendiente;
+    public byte[]? XmlFirmado { get; set; }
+    public string? DigestValue { get; set; }
+    public byte[]? CdrZip { get; set; }
+    public string? CdrRespuestaCodigo { get; set; }            // "0" = aceptado
+    public string? CdrDescripcion { get; set; }
+    public List<string> CdrObservaciones { get; set; } = [];
+
+    public string NombreArchivo => NombreArchivoSunat.Comprobante(Emisor.Ruc, TipoComprobante, Series);
 }
