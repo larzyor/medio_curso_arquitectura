@@ -516,8 +516,10 @@ abc-billing-solution/
 │   │   │   ├── CdrParser.cs
 │   │   │   └── SunatSoapOseClient.cs
 │   │   ├── UblEngine/
+│   │   │   ├── Dominio/   (ComprobanteUbl, LineaUbl, VocabularioUbl: la traducción en lenguaje del dominio)
+│   │   │   ├── Generated/
+│   │   │   │   └── UblInvoice21.g.cs   (generado desde UBL-Invoice-2.1.xsd con tools/UblCodeGen)
 │   │   │   ├── Model/
-│   │   │   │   ├── UblInvoiceModel.cs
 │   │   │   │   └── UblNamespaces.cs
 │   │   │   ├── Schemas/   (XSD oficiales de OASIS UBL 2.1: maindoc/ y common/)
 │   │   │   └── Serializers/
@@ -543,9 +545,12 @@ abc-billing-solution/
 │       ├── appsettings.json
 │       └── Program.cs
 ├── tests/
-│   └── ABC.Billing.SmokeTests/
-│       ├── ABC.Billing.SmokeTests.csproj
-│       └── Program.cs
+│   ├── ABC.Billing.SmokeTests/
+│   │   ├── ABC.Billing.SmokeTests.csproj
+│   │   └── Program.cs
+│   └── ABC.Billing.UblEngine.Tests/   (xUnit: pruebas unitarias de generación del XML, Taller 2)
+├── tools/
+│   └── UblCodeGen/generar_modelo_ubl.py   (XSD → clases C#)
 ├── .gitignore
 ├── ABC.Billing.sln
 ├── NuGet.config
@@ -860,6 +865,8 @@ Todo lo siguiente se ejecutó antes de entregar:
 | API en ejecución con `curl`: 201, 400 (JSON roto y modelo inválido), 401, 403, 404, 422, 202 (SUNAT sin conexión) y 200 | Códigos correctos; ningún error 500 |
 | `openapi.yaml` con `openapi-spec-validator` | OpenAPI 3.0.3 válido |
 | `sql/001_schema.sql` analizado como PostgreSQL con `sqlglot` | 6 sentencias válidas |
+
+**Taller 2 (generación del XML desde el XSD):** ver [`TALLER_2_XML_DESDE_XSD.md`](TALLER_2_XML_DESDE_XSD.md). Las pruebas unitarias de `tests/ABC.Billing.UblEngine.Tests` se agregaron después de la tabla anterior y deben ejecutarse con `dotnet test`.
 
 **No verificado:** el envío real al servicio beta de SUNAT (el entorno de pruebas no tenía salida a Internet), el cliente MAUI y los empaquetados MSI/APK.
 

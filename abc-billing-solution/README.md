@@ -6,13 +6,24 @@ Código de referencia de la especificación Spec-First. **La especificación est
 
 ## Requisitos
 
-- .NET SDK 8.0. No usa paquetes NuGet de terceros (`NuGet.config` desactiva las fuentes remotas; bórralo si luego agregas paquetes).
+- .NET SDK 8.0. El código de producción no usa paquetes NuGet de terceros; solo el proyecto de pruebas unitarias usa xUnit (desde nuget.org).
+- Opcional: Python 3, solo para regenerar las clases UBL si cambia el XSD.
 
 ## Probar
 
 ```bash
 # 64 comprobaciones: dominio, XML contra el XSD oficial, firma, CDR, migración, concurrencia
 dotnet run --project tests/ABC.Billing.SmokeTests docs/ejemplos
+```
+
+## Taller 2: XML desde el XSD
+
+Las clases UBL se generan desde `UBL-Invoice-2.1.xsd` y la traducción está escrita en el lenguaje del dominio.
+Detalle en [`docs/TALLER_2_XML_DESDE_XSD.md`](docs/TALLER_2_XML_DESDE_XSD.md).
+
+```bash
+dotnet test tests/ABC.Billing.UblEngine.Tests              # pruebas unitarias de generación del XML
+python tools/UblCodeGen/generar_modelo_ubl.py --check       # el modelo generado sigue igual al XSD
 ```
 
 ## Ejecutar la API

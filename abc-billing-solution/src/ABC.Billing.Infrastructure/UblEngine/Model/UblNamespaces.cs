@@ -1,11 +1,13 @@
+using ABC.Billing.Infrastructure.UblEngine.Generated;
+
 namespace ABC.Billing.Infrastructure.UblEngine.Model;
 
 public static class UblNs
 {
-    public const string Invoice = "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2";
-    public const string Cac = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2";
-    public const string Cbc = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2";
-    public const string Ext = "urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2";
+    public const string Invoice = UblXmlNs.Invoice;
+    public const string Cac = UblXmlNs.Cac;
+    public const string Cbc = UblXmlNs.Cbc;
+    public const string Ext = UblXmlNs.Ext;
     public const string Ds = "http://www.w3.org/2000/09/xmldsig#";
 
     /// <summary>Id de la firma: lo comparten cac:Signature/cbc:ID, su URI "#..." y ds:Signature/@Id.</summary>

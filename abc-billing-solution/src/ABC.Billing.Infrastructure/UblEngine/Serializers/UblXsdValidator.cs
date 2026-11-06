@@ -20,6 +20,9 @@ public sealed class UblXsdValidator : IUblXsdValidator
         _schemas.Compile();
     }
 
+    /// <summary>Esquemas compilados (las pruebas los usan para comparar el modelo generado con el XSD).</summary>
+    public XmlSchemaSet Esquemas => _schemas;
+
     private XmlSchema Cargar(string ruta)
     {
         if (_cargados.TryGetValue(ruta, out var existente)) return existente;
