@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <!-- Especificación de empaquetado para instalador nativo MSI en Windows Desktop -->
+  <Product Id="*" 
+           Name="ABC Facturacion Electronica" 
+           Language="3082" 
+           Version="1.0.0.0" 
+           Manufacturer="ABC Software Corp" 
+           UpgradeCode="B5A3E921-817D-4C98-A293-6C789B10E2D4">
+           
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="ProductFeature" Title="ABC.Billing.Client" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="ABCFacturacion" />
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="MainExecutable" Guid="E3D7B1C2-5F8A-4D3E-91B2-7C8A9E0F1D2C">
+        <File Source="$(var.ABC.Billing.App.Client.TargetPath)" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
