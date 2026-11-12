@@ -71,6 +71,6 @@ public class MigracionDeDatosLegadosTests
     {
         var repo = new RepositorioKardexEnMemoria();
         await new MigrarDatosLegadosService(repo).MigrarLoteAsync(Lote);
-        Assert.Equal(1, repo.Auditoria.Where(a => a.ProductoOriginal.Trim().ToUpperInvariant().Contains("ARROZ")).Select(a => a.Sku).Distinct().Count());
+        Assert.Single(repo.Auditoria.Where(a => a.ProductoOriginal.Trim().ToUpperInvariant().Contains("ARROZ")).Select(a => a.Sku).Distinct());
     }
 }

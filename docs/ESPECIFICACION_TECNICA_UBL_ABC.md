@@ -4,6 +4,55 @@
 > **Curso:** Arquitectura de Software (UNAS) · **Examen de medio curso:** 19/10/2026 · **Versión del documento:** 2.0 (corregida con las observaciones del profesor)  
 > **Entregable:** esqueleto de especificaciones técnicas de la fase 1 (Spec-First): modelo de dominio y contratos, diagramas MVC con visión Hexagonal, contratos API y matriz de trazabilidad normativa.
 
+## 0. Descripción del caso
+
+### 0.1 La empresa y su problema
+
+**ABC Software Corp** es una empresa mediana que comercializa abarrotes y mercadería al por mayor y menor. Tiene un software operativo básico que cumple lo justo para registrar el día a día del almacén: controla fichas sencillas con los campos `fecha`, `ingreso`, `salida`, `producto` y un número de documento interno bastante informal (`nro_documento`).
+
+SUNAT, mediante la RS 097-2012, la RS 234-2006 y las normas posteriores de masificación de comprobantes electrónicos, le exige llevar registros formales y **emitir comprobantes legales estructurados bajo el estándar internacional UBL** (Universal Business Language). El sistema actual no lo permite:
+
+| Carencia del sistema actual | Qué exige SUNAT |
+|:---|:---|
+| No valida los RUC | RUC con 11 dígitos y dígito verificador válido (Módulo 11) |
+| No calcula bien IGV, ISC ni ICBPER | Cálculo por tipo de afectación y de tributo (Catálogos 05, 07 y 08) |
+| No genera XML firmados digitalmente | XML UBL 2.1 con firma XMLDSig |
+| No se comunica con un OSE ni con SUNAT | Envío por servicio web y recepción de la constancia (CDR) |
+
+### 0.2 Qué se espera del equipo
+
+El líder del equipo no empieza a codificar: aplica la metodología **Spec-First**, es decir, primero define las reglas, los contratos de datos, las validaciones y los contratos de interfaz, estudiando el esquema `UBL-Invoice-2.1.xsd`. Las condiciones del caso son:
+
+- **Migración de datos legados:** la información histórica (`fecha`, `ingreso`, `salida`, `producto`, `nro_documento`) debe mapearse a las nuevas entidades sin perder trazabilidad.
+- **Normativa peruana:** catálogos de SUNAT, afectación al IGV, monedas, series y correlativos.
+- **Arquitectura:** monolito MVC limpio hoy, desacoplado para migrar a Hexagonal o Clean Architecture y luego a microservicios.
+- **Distribución:** Windows y Android, con instalador MSI o APK.
+
+La primera fase (medio curso) entregó el esqueleto de especificaciones. Esta versión del documento incorpora además el código del Taller 2.
+
+### 0.3 El caso de este taller (2.º parcial)
+
+El profesor pide pasar de la especificación al código en un punto concreto: **generar el XML de la factura electrónica a partir del esquema oficial `UBL-Invoice-2.1.xsd`**, programado en un lenguaje que el equipo domine (**C#, .NET 8**) y demostrado con **pruebas unitarias de generación**.
+
+```mermaid
+flowchart LR
+    XSD["UBL-Invoice-2.1.xsd<br/>(OASIS)"] -->|"herramienta de generación<br/>(tools/ABC.Billing.GenerarClasesUbl)"| CLS["Clases C# del esquema<br/>(UblInvoice21.generated.cs)"]
+    DOM["Comprobante del dominio<br/>(líneas, tributos, cliente)"] -->|"GeneradorXmlUblFactura21"| CLS
+    CLS -->|"XmlSerializer<br/>ISO-8859-1"| XML["XML UBL 2.1"]
+    XML -->|"firma XMLDSig"| FIR["XML firmado"]
+    FIR -->|"validación"| XSD
+```
+
+| Alcance del taller | Dónde está |
+|:---|:---|
+| Clases generadas a partir del XSD | `src/ABC.Billing.Infrastructure/UblEngine/Generado/` |
+| Dominio que habla de comprobantes, líneas, tributos y clientes | `src/ABC.Billing.Core/` |
+| Generación del XML, firma y validación contra el XSD | `src/ABC.Billing.Infrastructure/UblEngine/` y `Cryptography/` |
+| Pruebas unitarias de generación | `tests/ABC.Billing.Tests/Generacion/` |
+| Ejemplos de salida (firmados y válidos contra el XSD) | `docs/ejemplos/` |
+
+**Fuera del alcance de esta versión:** notas de crédito y débito, comunicación de baja, resumen diario, descuentos y cargos, y el sistema de ISC por precio de venta al público. Están en el contrato de la API, no en el código (sección 1.3).
+
 ## 1. Resumen y alcance
 
 ### 1.1 Objetivo
@@ -30,8 +79,8 @@ Esta especificación distingue lo que **ya existe en el código** de este reposi
 - [x] Cálculo tributario: ISC → IGV, ICBPER, exonerado, inafecto, exportación y operaciones gratuitas
 - [x] Clases UBL **generadas desde `UBL-Invoice-2.1.xsd`** (614 clases, herramienta propia en `tools/`)
 - [x] Emisión: serie y correlativo atómicos, XML UBL 2.1, firma XMLDSig, validación contra el XSD oficial
-- [x] **Pruebas unitarias xUnit de generación** (153 pruebas en `tests/ABC.Billing.Tests`)
-- [x] Dominio expresado en español: `Comprobante`, `LineaComprobante`, `SubtotalTributo`, `Cliente`, `Emisor`...
+- [x] **Pruebas unitarias xUnit de generación** (166 pruebas en `tests/ABC.Billing.Tests`, 71 de ellas de generación del XML)
+- [x] Proyecto en **C# (.NET 8)**, con el dominio expresado en términos de negocio (`Comprobante`, `LineaComprobante`, `SubtotalTributo`, `Cliente`, `Emisor`...) y aislado del XML
 - [x] Transmisión `sendBill` (cliente SOAP), lectura del CDR, estados y contingencia
 - [x] Migración del sistema legado al kardex con auditoría
 - [x] API: `POST/GET /invoices`, `/xml`, `/transmit`, `/cdr` y `POST /migration/legacy-stock`, con autenticación Bearer y errores `application/problem+json`
@@ -63,8 +112,9 @@ Esta especificación distingue lo que **ya existe en el código** de este reposi
 | Requisito del profesor | Dónde se cumple |
 |:---|:---|
 | Generar el XML de la factura a partir del `UBL-Invoice-2.1.xsd` oficial de OASIS | Las clases de [`UblInvoice21.generated.cs`](../src/ABC.Billing.Infrastructure/UblEngine/Generado/UblInvoice21.generated.cs) se **generan desde el XSD** con `tools/ABC.Billing.GenerarClasesUbl`; `GeneradorXmlUblFactura21` las llena y serializa, y el resultado se valida contra el mismo XSD (sección 10.6) |
-| En el lenguaje del dominio | El dominio habla de comprobantes, líneas, tributos y clientes (`Comprobante`, `LineaComprobante`, `SubtotalTributo`, `Cliente`). Las etiquetas UBL solo existen en el adaptador de Infraestructura; lo comprueban las pruebas de `AislamientoDelDominioTests` |
-| Pruebas unitarias de generación | [`tests/ABC.Billing.Tests`](../tests/ABC.Billing.Tests) (xUnit), carpeta `Generacion/`: 58 pruebas de estructura, catálogos, importes, escape, codificación, XSD, firma y fidelidad con el XSD |
+| En el lenguaje del dominio | El profesor aclaró que significa "en el lenguaje que sepan": el proyecto está en **C# (.NET 8)**. Como mejora adicional, el dominio habla de comprobantes, líneas, tributos y clientes (`Comprobante`, `LineaComprobante`, `SubtotalTributo`, `Cliente`) y las etiquetas UBL solo existen en el adaptador de Infraestructura; lo comprueban las pruebas de `AislamientoDelDominioTests` |
+| Pruebas unitarias de generación | [`tests/ABC.Billing.Tests`](../tests/ABC.Billing.Tests) (xUnit), carpeta `Generacion/`: 71 pruebas de estructura, catálogos, importes, escape, codificación, XSD, firma, fidelidad con el XSD y **reproducción del ejemplo C de la guía de SUNAT** (sección 10.7) |
+| Guía de SUNAT que mostró el profesor (Factura UBL 2.1, mayo 2017) | Nombres de tributo y textos de atributos alineados con la guía, `LineCountNumeric`, y las diferencias deliberadas documentadas en la sección 10.7 |
 | Fecha límite 12/11/2026 (el profesor clona el repositorio, que es público) | El repositorio compila y prueba tras clonarlo: `git clone` y `dotnet test` (ver `README.md`) |
 
 ## 2. Estándar y versiones
@@ -112,17 +162,19 @@ SistemaIsc.AlValor             // 1  ("01") -> Catálogo 08
 
 ### 3.3 Catálogo 05: tipos de tributo
 
+Los nombres (`cbc:Name`) son los de la guía de SUNAT; la RS 150-2019 los abrevia (EXO, INA, GRA, EXP), pero la guía que entregó el profesor usa los nombres completos.
+
 | Código | Nombre (`cbc:Name`) | `TaxTypeCode` | Categoría UN/ECE 5305 | Uso |
 |:---|:---|:---|:---|:---|
 | 1000 | IGV | VAT | S | Impuesto General a las Ventas |
 | 1016 | IVAP | VAT | S | Arroz pilado (no soportado en esta fase) |
 | 2000 | ISC | EXC | S | Impuesto Selectivo al Consumo |
 | **7152** | **ICBPER** | OTH | S | Impuesto al consumo de las bolsas de plástico (RS 150-2019) |
-| 9995 | EXP | FRE | G | Exportación |
-| **9996** | GRA | FRE | Z | Operaciones gratuitas |
-| **9997** | EXO | VAT | E | Exonerado (**oneroso**; las transferencias gratuitas van en 9996) |
-| 9998 | INA | FRE | O | Inafecto |
-| 9999 | OTROS | OTH | S | Otros conceptos de pago |
+| 9995 | EXPORTACIÓN | FRE | G | Exportación |
+| **9996** | GRATUITO | FRE | Z | Operaciones gratuitas |
+| **9997** | EXONERADO | VAT | E | Exonerado (**oneroso**; las transferencias gratuitas van en 9996) |
+| 9998 | INAFECTO | FRE | O | Inafecto |
+| 9999 | OTROS CONCEPTOS DE PAGO | OTH | S | Otros conceptos de pago |
 
 ### 3.4 Catálogo 07: afectación al IGV
 
@@ -565,6 +617,7 @@ abc-billing-solution/
 │       │   ├── CalculoTributosTests.cs
 │       │   └── ValoresDelDominioTests.cs
 │       ├── Generacion/
+│       │   ├── EjemplosDeLaGuiaTests.cs
 │       │   ├── FirmaDigitalTests.cs
 │       │   ├── GeneracionDesdeXsdTests.cs
 │       │   ├── GeneracionXmlTests.cs
@@ -584,6 +637,7 @@ abc-billing-solution/
 │   └── README.md
 ├── .gitignore
 ├── ABC.Billing.sln
+├── Directory.Build.props
 └── README.md
 ```
 
@@ -677,7 +731,7 @@ Extractos del archivo [`ejemplos/factura-ejemplo-firmada.xml`](ejemplos/factura-
       <cbc:Percent>10.00</cbc:Percent>
       <cbc:TierRange>01</cbc:TierRange>
       <cac:TaxScheme>
-        <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">2000</cbc:ID>
+        <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">2000</cbc:ID>
         <cbc:Name>ISC</cbc:Name>
         <cbc:TaxTypeCode>EXC</cbc:TaxTypeCode>
       </cac:TaxScheme>
@@ -689,9 +743,9 @@ Extractos del archivo [`ejemplos/factura-ejemplo-firmada.xml`](ejemplos/factura-
     <cac:TaxCategory>
       <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
       <cbc:Percent>18.00</cbc:Percent>
-      <cbc:TaxExemptionReasonCode listName="Afectacion del IGV" listAgencyName="PE:SUNAT" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
+      <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="SUNAT:Codigo de Tipo de Afectación del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
       <cac:TaxScheme>
-        <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">1000</cbc:ID>
+        <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">1000</cbc:ID>
         <cbc:Name>IGV</cbc:Name>
         <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
       </cac:TaxScheme>
@@ -710,7 +764,7 @@ Subtotal del **ICBPER (Catálogo 05, código 7152)**: monto, cantidad de bolsas 
     <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
     <cbc:PerUnitAmount currencyID="PEN">0.50</cbc:PerUnitAmount>
     <cac:TaxScheme>
-      <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">7152</cbc:ID>
+      <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">7152</cbc:ID>
       <cbc:Name>ICBPER</cbc:Name>
       <cbc:TaxTypeCode>OTH</cbc:TaxTypeCode>
     </cac:TaxScheme>
@@ -772,6 +826,37 @@ dotnet run --project tools/ABC.Billing.GenerarClasesUbl --   src/ABC.Billing.Inf
 Las pruebas de `GeneracionDesdeXsdTests` comparan las clases generadas con el esquema cargado en memoria (mismos elementos, mismo orden, obligatorios no anulables y repetibles como lista). Se usó una herramienta propia porque `xsd.exe` solo existe en Windows y la de Mono no resuelve los `import` relativos de UBL.
 
 Ver el flujo completo en la sección 8.3: el adaptador `GeneradorXmlUblFactura21` es el único código que conoce estas clases; el dominio solo entrega un `Comprobante`.
+
+### 10.7 Conformidad con la guía de SUNAT (Factura UBL 2.1, mayo 2017)
+
+La guía que usó el profesor define, para cada campo de la factura, su ubicación XML, sus atributos y tres ejemplos completos (A: 4 ítems con bonificación; B: 2 ítems con ISC; C: transferencia gratuita). El generador se contrastó con ella:
+
+| Aspecto | Guía | Generador |
+|:---|:---|:---|
+| Versiones | `UBLVersionID` 2.1, `CustomizationID` 2.0 | Igual |
+| Bloque de firma | `cac:Signature` con `ID`, `SignatoryParty`, `DigitalSignatureAttachment` | Igual |
+| Emisor y cliente | `PartyTaxScheme` con `RegistrationName`, `CompanyID` y `TaxScheme/ID` = `-` | Igual |
+| Un solo `TaxTotal` de cabecera con varios `TaxSubtotal` | Sí | Igual |
+| Línea gratuita | Valor de venta 0.00, precio 0.00, valor referencial con tipo de precio 02 | Igual |
+| Exoneradas e inafectas excluyen las gratuitas (numerales 24 y 25) | Sí | Igual |
+| IGV = 18 % de (gravadas + ISC) (numeral 27) | Sí | Igual |
+| Leyenda 1002 solo si todas las líneas son gratuitas (numeral 10) | Sí | Igual |
+| Nombres de tributo | IGV, ISC, EXONERADO, INAFECTO, GRATUITO, OTROS CONCEPTOS DE PAGO | Igual (alineado en esta versión) |
+| Textos de los atributos `listName` y `schemeName` | `SUNAT:Identificador de Tipo de Documento`, `SUNAT:Indicador de Tipo de Precio`... | Igual (alineado en esta versión) |
+| `TaxScheme/ID` | Cabecera: `schemeID` y `schemeAgencyID`; línea: `schemeID`, `schemeName`, `schemeAgencyName` | Igual (alineado en esta versión) |
+| `cbc:LineCountNumeric` | Opcional; aparece en los tres ejemplos | Se genera |
+
+**Diferencias deliberadas**
+
+| Tema | Qué pasa | Decisión |
+|:---|:---|:---|
+| Tributo de las gratuitas | El texto (numerales 24 a 26) manda informarlas con **9996 GRATUITO**; los XML de los ejemplos B y C las muestran bajo 9998 INAFECTO | Se sigue el texto. La prueba `Ejemplo_C_las_gratuitas_se_informan_como_9996...` lo documenta |
+| URI del tipo de operación | Texto: Catálogo 51; XML del ejemplo: `catalogo17` | Se usa la URI del ejemplo; los códigos (`0101`...) son del Catálogo 51 |
+| Elementos con errores en los ejemplos | `CompanyID` sin prefijo `cbc:` y dos `TaxAmount` seguidos en la cabecera, que el XSD rechaza | **Manda el XSD**: el taller pide generar a partir de él |
+| RUC de los ejemplos | No pasan el Módulo 11 | Las pruebas usan RUC ficticios válidos |
+| Prefijo de la firma | La guía usa `ds:Signature`; .NET emite `Signature` con el espacio de nombres por defecto | Equivalente en XML. Cambiar el prefijo después de firmar invalidaría la firma |
+| No se generan | Descuentos y cargos (`cac:AllowanceCharge`, `AllowanceTotalAmount`, `ChargeTotalAmount`), percepción, guía de remisión relacionada, código UNSPSC (opcional), leyenda 3000 (código interno) | Fuera del alcance; están en el contrato como pendientes |
+| Ejemplos A y B | Usan descuentos, bonificación con ISC y el sistema de ISC 03 | No se reproducen por completo. El ejemplo C sí, con 9 pruebas (`EjemplosDeLaGuiaTests`) |
 
 ## 11. Matriz de trazabilidad normativa
 
@@ -908,8 +993,9 @@ Todo lo siguiente se ejecutó antes de entregar:
 
 | Verificación | Resultado |
 |:---|:---|
-| Pruebas unitarias xUnit (`tests/ABC.Billing.Tests`): generación, XSD, firma, cálculo, dominio, emisión, transmisión, migración, CDR | **153 pruebas, 0 fallas** (ejecutadas con un ejecutor que imita la API de xUnit, ver nota) |
-| Prueba de mutación: se cambió la tasa del IGV a 19 % | 11 pruebas fallaron; al restaurarla pasan las 153 |
+| `dotnet test` con xUnit real (SDK 8.0.428, Ubuntu en WSL, tras clonar y copiar el proyecto) | **153 pruebas, 0 fallas** |
+| Pruebas agregadas después (ejemplo C de la guía, textos de atributos, `LineCountNumeric`): 166 en total | Verificadas con un ejecutor propio que imita xUnit; confirmar con `dotnet test` |
+| Prueba de mutación: se cambió la tasa del IGV a 19 % | 11 pruebas fallaron; al restaurarla pasaron todas |
 | Validación del XML generado contra `UBL-Invoice-2.1.xsd` con .NET (`XmlSchemaSet`) y, de forma independiente, con `lxml`/libxml2 | Factura y boleta de ejemplo **válidas** en ambos validadores |
 | Firma XMLDSig: verificación y alteración posterior del XML | Válida; **inválida** al modificar el XML |
 | Correlativo bajo concurrencia | 500 asignaciones paralelas, 500 correlativos distintos |

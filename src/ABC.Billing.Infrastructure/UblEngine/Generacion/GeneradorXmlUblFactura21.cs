@@ -54,13 +54,14 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
             UBLVersionID = new UBLVersionIDType { Value = "2.1" },
             CustomizationID = new CustomizationIDType { Value = "2.0" },
             ProfileID = new ProfileIDType
-            { Value = c.TipoOperacion.Codigo(), SchemeName = "Tipo de Operacion", SchemeAgencyName = UblNs.Agency, SchemeURI = UblNs.Catalogo("51") },
+            { Value = c.TipoOperacion.Codigo(), SchemeName = "SUNAT:Identificador de Tipo de Operación", SchemeAgencyName = UblNs.Agency, SchemeURI = UblNs.Catalogo("17") }, // URI tal como la muestra la guía (los códigos son del Catálogo 51)
             ID = new IDType { Value = c.SerieNumero },
             IssueDate = new IssueDateType { Value = c.FechaEmision.ToString("yyyy-MM-dd", Inv) },
             IssueTime = new IssueTimeType { Value = c.FechaEmision.ToString("HH:mm:ss", Inv) },
             InvoiceTypeCode = new InvoiceTypeCodeType
-            { Value = c.TipoComprobante.Codigo(), ListAgencyName = UblNs.Agency, ListName = "Tipo de Documento", ListURI = UblNs.Catalogo("01") },
+            { Value = c.TipoComprobante.Codigo(), ListAgencyName = UblNs.Agency, ListName = "SUNAT:Identificador de Tipo de Documento", ListURI = UblNs.Catalogo("01") },
             DocumentCurrencyCode = new DocumentCurrencyCodeType { Value = mon, ListID = "ISO 4217 Alpha", ListName = "Currency", ListAgencyName = Unece },
+            LineCountNumeric = new LineCountNumericType { Value = c.Lineas.Count },   // cantidad de ítems (opcional en la guía; aparece en todos sus ejemplos)
             AccountingSupplierParty = new SupplierPartyType { Party = ParteEmisor(c.Emisor) },
             AccountingCustomerParty = new CustomerPartyType { Party = ParteCliente(c.Cliente) },
             LegalMonetaryTotal = new MonetaryTotalType
@@ -95,7 +96,7 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
             {
                 TaxableAmount = t.BaseImponible is null ? null : new TaxableAmountType { Value = Dos(t.BaseImponible.Value), CurrencyID = mon },
                 TaxAmount = new TaxAmountType { Value = Dos(t.Monto), CurrencyID = mon },
-                TaxCategory = Categoria(t.Tributo)
+                TaxCategory = Categoria(t.Tributo, cabecera: true)
             });
         f.TaxTotal.Add(total);
 
@@ -116,7 +117,7 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
                 RegistrationName = new RegistrationNameType { Value = e.RazonSocial },
                 CompanyID = Documento(TipoDocumentoIdentidad.RUC, e.Ruc.Value),
                 RegistrationAddress = new AddressType
-                { AddressTypeCode = new AddressTypeCodeType { Value = e.CodigoEstablecimiento, ListAgencyName = UblNs.Agency, ListName = "Establecimientos anexos" } },
+                { AddressTypeCode = new AddressTypeCodeType { Value = e.CodigoEstablecimiento } },   // sin atributos, como en la guía
                 TaxScheme = new TaxSchemeType { ID = new IDType { Value = "-" } }
             }
         }
@@ -136,7 +137,7 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
     };
 
     private static CompanyIDType Documento(TipoDocumentoIdentidad tipo, string numero) => new()
-    { Value = numero, SchemeID = tipo.Codigo(), SchemeName = "Documento de Identidad", SchemeAgencyName = UblNs.Agency, SchemeURI = UblNs.Catalogo("06") };
+    { Value = numero, SchemeID = tipo.Codigo(), SchemeName = "SUNAT:Identificador de Documento de Identidad", SchemeAgencyName = UblNs.Agency, SchemeURI = UblNs.Catalogo("06") };
 
     private static InvoiceLineType MapearLinea(LineaComprobante l, string mon)
     {
@@ -166,7 +167,7 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
                     PriceTypeCode = new PriceTypeCodeType
                     {
                         Value = (gratuita ? TipoPrecio.ValorReferencialOperacionNoOnerosa : TipoPrecio.PrecioUnitarioIncluyeIgv).Codigo(),
-                        ListName = "Tipo de Precio", ListAgencyName = UblNs.Agency, ListURI = UblNs.Catalogo("16")
+                        ListName = "SUNAT:Indicador de Tipo de Precio", ListAgencyName = UblNs.Agency, ListURI = UblNs.Catalogo("16")
                     }
                 }
             }
@@ -219,18 +220,21 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
         TaxCategory = Categoria(t, porcentaje, afectacion, tier)
     };
 
-    private static TaxCategoryType Categoria(TributoSunat t, decimal? porcentaje = null, AfectacionIgv? afectacion = null, string? tier = null, PerUnitAmountType? perUnit = null) => new()
+    private static TaxCategoryType Categoria(TributoSunat t, decimal? porcentaje = null, AfectacionIgv? afectacion = null, string? tier = null, PerUnitAmountType? perUnit = null, bool cabecera = false) => new()
     {
         ID = new IDType { Value = t.CategoriaUbl, SchemeID = "UN/ECE 5305", SchemeName = "Tax Category Identifier", SchemeAgencyName = Unece },
         Percent = porcentaje is null ? null : new PercentType { Value = Dos(porcentaje.Value) },
         PerUnitAmount = perUnit,
         TaxExemptionReasonCode = afectacion is null ? null : new TaxExemptionReasonCodeType
-        { Value = afectacion.Value.Codigo(), ListAgencyName = UblNs.Agency, ListName = "Afectacion del IGV", ListURI = UblNs.Catalogo("07") },
+        { Value = afectacion.Value.Codigo(), ListAgencyName = UblNs.Agency, ListName = "SUNAT:Codigo de Tipo de Afectación del IGV", ListURI = UblNs.Catalogo("07") },
         // cbc:TierRange es de tipo texto en UBL 2.1: no admite atributos de catálogo (el XSD los rechaza)
         TierRange = tier is null ? null : new TierRangeType { Value = tier },
         TaxScheme = new TaxSchemeType
         {
-            ID = new IDType { Value = t.Codigo, SchemeName = "Codigo de tributos", SchemeAgencyName = UblNs.Agency, SchemeURI = UblNs.Catalogo("05") },
+            // La guía usa atributos distintos en el TaxScheme/ID de la cabecera y en el de cada línea
+            ID = cabecera
+                ? new IDType { Value = t.Codigo, SchemeID = "UN/ECE 5153", SchemeAgencyID = "6" }
+                : new IDType { Value = t.Codigo, SchemeID = "UN/ECE 5153", SchemeName = "Tax Scheme Identifier", SchemeAgencyName = Unece },
             Name = new NameType { Value = t.Nombre },
             TaxTypeCode = new TaxTypeCodeType { Value = t.CodigoInternacional }
         }

@@ -95,11 +95,11 @@ public class GeneracionXmlTests
     [Theory]
     [InlineData("1000", "IGV", "VAT", "S")]
     [InlineData("2000", "ISC", "EXC", "S")]
-    [InlineData("9997", "EXO", "VAT", "E")]
-    [InlineData("9998", "INA", "FRE", "O")]
-    [InlineData("9996", "GRA", "FRE", "Z")]
+    [InlineData("9997", "EXONERADO", "VAT", "E")]
+    [InlineData("9998", "INAFECTO", "FRE", "O")]
+    [InlineData("9996", "GRATUITO", "FRE", "Z")]
     [InlineData("7152", "ICBPER", "OTH", "S")]
-    public void Cada_tributo_se_describe_segun_el_Catalogo_05(string codigo, string nombre, string codigoInternacional, string categoria)
+    public void Cada_tributo_se_describe_segun_el_Catalogo_05_y_la_guia_de_SUNAT(string codigo, string nombre, string codigoInternacional, string categoria)
     {
         var sub = SubtotalCabecera(codigo);
         var esquema = sub.Descendants(Cac + "TaxScheme").Single();
@@ -260,6 +260,55 @@ public class GeneracionXmlTests
         var notas = Fabrica.Doc(Fabrica.XmlSinFirma(c)).Root!.Elements(Cbc + "Note").Select(n => n.Attribute("languageLocaleID")!.Value).ToList();
         Assert.Contains("1002", notas);
         Assert.DoesNotContain("1002", Raiz.Elements(Cbc + "Note").Select(n => n.Attribute("languageLocaleID")!.Value));
+    }
+
+
+    [Fact]
+    public void LineCountNumeric_informa_la_cantidad_de_items_como_en_los_ejemplos_de_la_guia()
+        => Assert.Equal("6", Raiz.Element(Cbc + "LineCountNumeric")!.Value);
+
+    [Fact]
+    public void Los_textos_de_los_atributos_de_catalogo_son_los_de_la_guia_de_SUNAT()
+    {
+        var perfil = Raiz.Element(Cbc + "ProfileID")!;
+        Assert.Equal("SUNAT:Identificador de Tipo de Operación", perfil.Attribute("schemeName")!.Value);
+        Assert.Equal("PE:SUNAT", perfil.Attribute("schemeAgencyName")!.Value);
+
+        Assert.Equal("SUNAT:Identificador de Tipo de Documento", Raiz.Element(Cbc + "InvoiceTypeCode")!.Attribute("listName")!.Value);
+        Assert.Equal("ISO 4217 Alpha", Raiz.Element(Cbc + "DocumentCurrencyCode")!.Attribute("listID")!.Value);
+
+        var ruc = Raiz.Element(Cac + "AccountingSupplierParty")!.Descendants(Cbc + "CompanyID").Single();
+        Assert.Equal("SUNAT:Identificador de Documento de Identidad", ruc.Attribute("schemeName")!.Value);
+        Assert.Equal("urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06", ruc.Attribute("schemeURI")!.Value);
+
+        var tipoPrecio = Linea(1).Descendants(Cbc + "PriceTypeCode").Single();
+        Assert.Equal("SUNAT:Indicador de Tipo de Precio", tipoPrecio.Attribute("listName")!.Value);
+        Assert.Equal("urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16", tipoPrecio.Attribute("listURI")!.Value);
+
+        var afectacion = Linea(1).Descendants(Cbc + "TaxExemptionReasonCode").Single();
+        Assert.Equal("SUNAT:Codigo de Tipo de Afectación del IGV", afectacion.Attribute("listName")!.Value);
+        Assert.Equal("urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07", afectacion.Attribute("listURI")!.Value);
+    }
+
+    [Fact]
+    public void El_codigo_de_establecimiento_va_sin_atributos_como_en_la_guia()
+    {
+        var codigo = Raiz.Element(Cac + "AccountingSupplierParty")!.Descendants(Cbc + "AddressTypeCode").Single();
+        Assert.Equal("0000", codigo.Value);
+        Assert.Empty(codigo.Attributes());
+    }
+
+    [Fact]
+    public void El_TaxScheme_de_cabecera_y_el_de_cada_linea_llevan_los_atributos_que_distingue_la_guia()
+    {
+        var cabecera = SubtotalCabecera("1000").Descendants(Cac + "TaxScheme").Single().Element(Cbc + "ID")!;
+        Assert.Equal("UN/ECE 5153", cabecera.Attribute("schemeID")!.Value);
+        Assert.Equal("6", cabecera.Attribute("schemeAgencyID")!.Value);
+
+        var linea = Linea(1).Descendants(Cac + "TaxScheme").Single().Element(Cbc + "ID")!;
+        Assert.Equal("UN/ECE 5153", linea.Attribute("schemeID")!.Value);
+        Assert.Equal("Tax Scheme Identifier", linea.Attribute("schemeName")!.Value);
+        Assert.Equal("United Nations Economic Commission for Europe", linea.Attribute("schemeAgencyName")!.Value);
     }
 
     [Fact]

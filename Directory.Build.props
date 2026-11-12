@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <!-- El código es .NET 8, pero .NET 8 ya salió de soporte (10/11/2026). RollForward=Major permite compilar y ejecutar
+         las pruebas en una máquina que solo tenga una versión más nueva (por ejemplo .NET 10). -->
+    <RollForward>Major</RollForward>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+</Project>
