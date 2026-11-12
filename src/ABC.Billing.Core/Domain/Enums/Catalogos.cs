@@ -53,6 +53,7 @@ public enum AfectacionIgv
     InafectoRetiroPorConvenioColectivo = 34,
     InafectoRetiroPorPremio = 35,
     InafectoRetiroPorPublicidad = 36,
+    InafectoTransferenciaGratuita = 37,
     Exportacion = 40
 }
 
@@ -71,12 +72,15 @@ public enum SistemaIsc
     PrecioVentaPublico = 3       // Apéndice IV, lit. C
 }
 
-/// <summary>Catálogo 09 – Tipo de nota de crédito (cbc:ResponseCode).</summary>
+/// <summary>Catálogo 09 – Tipo de nota de crédito (cbc:ResponseCode). 13 códigos; el 11, 12 y 13 son los agregados en la versión nueva del Anexo 8.</summary>
 public enum TipoNotaCredito
 {
     AnulacionDeLaOperacion = 1, AnulacionPorErrorEnElRuc = 2, CorreccionPorErrorEnLaDescripcion = 3,
     DescuentoGlobal = 4, DescuentoPorItem = 5, DevolucionTotal = 6, DevolucionPorItem = 7,
-    Bonificacion = 8, DisminucionEnElValor = 9, OtrosConceptos = 10
+    Bonificacion = 8, DisminucionEnElValor = 9, OtrosConceptos = 10,
+    AjustesDeOperacionesDeExportacion = 11,
+    AjustesAfectosAlIvap = 12,
+    CorreccionDelMontoNetoPendienteOFechasDeVencimiento = 13
 }
 
 /// <summary>Catálogo 10 – Tipo de nota de débito (cbc:ResponseCode).</summary>
@@ -118,7 +122,7 @@ public static class CatalogoExtensions
         AfectacionIgv.ExoneradoTransferenciaGratuita => CategoriaAfectacion.ExoneradoGratuito,
         AfectacionIgv.InafectoOperacionOnerosa => CategoriaAfectacion.InafectoOneroso,
         AfectacionIgv.Exportacion => CategoriaAfectacion.Exportacion,
-        _ => CategoriaAfectacion.InafectoGratuito // 31..36
+        _ => CategoriaAfectacion.InafectoGratuito // 31..37
     };
 
     public static bool EsGratuita(this AfectacionIgv a) => a.Categoria() is CategoriaAfectacion.GravadoGratuito

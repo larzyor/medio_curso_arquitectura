@@ -71,10 +71,12 @@ public sealed class EmitirFacturaService(
         // La serie se elige (o se toma la de defecto); el correlativo SIEMPRE lo asigna el servidor, de forma atómica.
         var serie = (c.SerieSolicitada ?? (c.TipoComprobante == TipoComprobante.Factura
             ? seriesPorDefecto.Factura : seriesPorDefecto.Boleta)).Trim().ToUpperInvariant();
+        // Se valida el prefijo ANTES de pedir el correlativo: una serie equivocada no debe gastar un número (dejaría un hueco en la numeración).
+        var prefijo = c.TipoComprobante == TipoComprobante.Factura ? 'F' : 'B';
+        if (serie.Length == 0 || serie[0] != prefijo)
+            throw new DominioValidationException($"La serie {serie} no corresponde a una {c.TipoComprobante} (F = factura, B = boleta).");
         var correlativo = await series.SiguienteAsync(c.TipoComprobante, serie, ct);
         comprobante.Numeracion = new SerieComprobante(serie, correlativo);
-        if (!comprobante.Numeracion.EsCompatibleCon(c.TipoComprobante))
-            throw new DominioValidationException($"La serie {serie} no corresponde a una {c.TipoComprobante} (F = factura, B = boleta).");
 
         var xml = generadorXml.GenerarXmlUbl21(comprobante);
         var firmado = firmador.Firmar(xml);              // 1.º firmar (después ya no se puede tocar el XML)

@@ -79,7 +79,7 @@ Esta especificación distingue lo que **ya existe en el código** de este reposi
 - [x] Cálculo tributario: ISC → IGV, ICBPER, exonerado, inafecto, exportación y operaciones gratuitas
 - [x] Clases UBL **generadas desde `UBL-Invoice-2.1.xsd`** (614 clases, herramienta propia en `tools/`)
 - [x] Emisión: serie y correlativo atómicos, XML UBL 2.1, firma XMLDSig, validación contra el XSD oficial
-- [x] **Pruebas unitarias xUnit de generación** (166 pruebas en `tests/ABC.Billing.Tests`, 71 de ellas de generación del XML)
+- [x] **Pruebas unitarias xUnit de generación** (173 pruebas en `tests/ABC.Billing.Tests`, 71 de ellas de generación del XML)
 - [x] Proyecto en **C# (.NET 8)**, con el dominio expresado en términos de negocio (`Comprobante`, `LineaComprobante`, `SubtotalTributo`, `Cliente`, `Emisor`...) y aislado del XML
 - [x] Transmisión `sendBill` (cliente SOAP), lectura del CDR, estados y contingencia
 - [x] Migración del sistema legado al kardex con auditoría
@@ -154,7 +154,8 @@ SistemaIsc.AlValor             // 1  ("01") -> Catálogo 08
 | 06 | Tipo de documento de identidad | `cbc:CompanyID/@schemeID` | `TipoDocumentoIdentidad` |
 | 07 | Afectación al IGV | `cbc:TaxExemptionReasonCode` | `AfectacionIgv` |
 | **08** | **Sistema de cálculo del ISC** | `cbc:TierRange` | `SistemaIsc` |
-| 09 y 10 | Motivo de nota de crédito y de débito | `cbc:ResponseCode` | `TipoNotaCredito`, `TipoNotaDebito` |
+| 09 y 10 | Motivo de nota de crédito (**13 códigos**, 01 a 13) y de débito (3 códigos) | `cbc:ResponseCode` | `TipoNotaCredito`, `TipoNotaDebito` |
+| 14 | Otros conceptos tributarios: totales por tipo de operación 1001 gravadas, 1002 inafectas, 1003 exoneradas, 1004 gratuitas, 3001 FISE (esquema UBL 2.0) | No se escribe en UBL 2.1 (ver 3.6) | `CodigoTotalOperacion`, `TotalesPorTipoOperacion` |
 | 16 | Tipo de precio de venta unitario | `cbc:PriceTypeCode` | `TipoPrecio` |
 | 25 | Código de producto SUNAT (UNSPSC) | `cac:CommodityClassification` | pendiente |
 | 51 | Tipo de operación de la factura | `cbc:ProfileID` | `TipoOperacion` |
@@ -186,7 +187,7 @@ Los nombres (`cbc:Name`) son los de la guía de SUNAT; la RS 150-2019 los abrevi
 | 20 | Exonerado: operación onerosa | ExoneradoOneroso | 9997 |
 | 21 | Exonerado: transferencia gratuita | ExoneradoGratuito | 9996 |
 | 30 | Inafecto: operación onerosa | InafectoOneroso | 9998 |
-| 31 a 36 | Inafecto: retiros (bonificación, retiro, muestras médicas, convenio colectivo, premio, publicidad) | InafectoGratuito | 9996 |
+| 31 a 37 | Inafecto: retiros (bonificación, retiro, muestras médicas, convenio colectivo, premio, publicidad) y transferencia gratuita | InafectoGratuito | 9996 |
 | 40 | Exportación | Exportacion | 9995 |
 
 ### 3.5 Catálogo 08: sistema de cálculo del ISC
@@ -196,6 +197,40 @@ Los nombres (`cbc:Name`) son los de la guía de SUNAT; la RS 150-2019 los abrevi
 | 01 | Sistema al valor (Apéndice IV, lit. A del T.U.O. IGV e ISC) | Implementado | `ISC = valor de venta × tasa / 100` |
 | 02 | Monto fijo (lit. B) | Implementado | `ISC = cantidad × monto fijo` |
 | 03 | Precio de venta al público (lit. C) | **Rechazado con error 422** | Requiere el Apéndice IV, literal C |
+
+### 3.6 Catálogos 09 y 14: lo que se agregó en el Taller 2
+
+**Catálogo 09, tipo de nota de crédito (13 códigos).** Los tres últimos son los agregados en la versión nueva del Anexo 8. Fuente de contraste: [facturacionelectronica.ai/catalogos/9](https://www.facturacionelectronica.ai/catalogos/9/), que es una página de consulta no oficial; el texto de referencia es el Anexo 8 de SUNAT.
+
+| Código | Motivo | `TipoNotaCredito` |
+|:---|:---|:---|
+| 01 | Anulación de la operación | `AnulacionDeLaOperacion` |
+| 02 | Anulación por error en el RUC | `AnulacionPorErrorEnElRuc` |
+| 03 | Corrección por error en la descripción | `CorreccionPorErrorEnLaDescripcion` |
+| 04 | Descuento global | `DescuentoGlobal` |
+| 05 | Descuento por ítem | `DescuentoPorItem` |
+| 06 | Devolución total | `DevolucionTotal` |
+| 07 | Devolución por ítem | `DevolucionPorItem` |
+| 08 | Bonificación | `Bonificacion` |
+| 09 | Disminución en el valor | `DisminucionEnElValor` |
+| 10 | Otros conceptos | `OtrosConceptos` |
+| **11** | Ajustes de operaciones de exportación | `AjustesDeOperacionesDeExportacion` |
+| **12** | Ajustes afectos al IVAP | `AjustesAfectosAlIvap` |
+| **13** | Corrección o modificación del monto neto pendiente de pago y/o de las fechas de vencimiento (cuotas) | `CorreccionDelMontoNetoPendienteOFechasDeVencimiento` |
+
+**Catálogo 07 completo (19 códigos).** Faltaba el 37 (Inafecto: transferencia gratuita); ya está en `AfectacionIgv`. Una prueba cuenta los 19.
+
+**Catálogo 14 y los códigos 1001 a 1004.** Se suele decir que "hay cuatro afectaciones" (1001 gravada, 1002 inafecta, 1003 exonerada, 1004 gratuita). Esos cuatro códigos **no son** el Catálogo 07: son el Catálogo 14 y clasifican los **totales** del comprobante por tipo de operación. La afectación de cada **línea** sigue siendo el Catálogo 07 (10, 20, 30, 40...).
+
+| Código (Cat. 14) | Total | Dónde sale en UBL 2.1 | Código |
+|:---|:---|:---|:---|
+| 1001 | Operaciones gravadas | `cac:TaxSubtotal` del tributo 1000 (base imponible) | `TotalOperacionesGravadas` |
+| 1002 | Operaciones inafectas | `cac:TaxSubtotal` del tributo 9998 | `TotalOperacionesInafectas` |
+| 1003 | Operaciones exoneradas | `cac:TaxSubtotal` del tributo 9997 | `TotalOperacionesExoneradas` |
+| 1004 | Operaciones gratuitas | `cac:TaxSubtotal` del tributo 9996 | `TotalOperacionesGratuitas` |
+| 3001 | FISE | No aplica a este alcance | no se calcula |
+
+En el esquema UBL 2.0 estos códigos viajaban en `sac:AdditionalMonetaryTotal/cbc:ID` (las reglas de validación de SUNAT de esa versión exigen al menos uno). En UBL 2.1 ese bloque ya no existe, por eso **no se escriben en el XML**: `TotalesPorTipoOperacion.De(comprobante)` los entrega para reportes, para el Registro de Ventas 14.1 y para la API. El 10 % de IGV en hoteles y restaurantes (Ley 31556) no es otro código: es la misma afectación gravada (10) con otra tasa (8 % de IGV y 2 % de IPM), y queda como trabajo futuro.
 
 ## 4. Sistema legado y migración de datos
 
@@ -239,8 +274,8 @@ Ejemplo ejecutado en las pruebas (6 filas): 3 migradas y 3 con error, con `ARROZ
 
 1. El cajero envía tipo `01`, tipo de operación (Catálogo 51), cliente con RUC válido (Módulo 11) e ítems con su afectación al IGV (Catálogo 07).
 2. El sistema valida cada código contra su catálogo y devuelve **422** si alguno no existe.
-3. Asigna la serie (`F001` por defecto o la solicitada) y el **correlativo de forma atómica**.
-4. Calcula ISC, IGV, ICBPER y los totales (sección 7).
+3. Calcula ISC, IGV, ICBPER y los totales (sección 7). Con el total ya conocido se aplica la regla de la boleta de S/ 700 o más.
+4. Elige la serie (`F001` por defecto o la solicitada), comprueba que su prefijo corresponda al tipo (F factura, B boleta) y **solo entonces** asigna el **correlativo de forma atómica**. Así una serie equivocada no gasta un número.
 5. Genera el XML UBL 2.1, lo firma (XMLDSig) y lo valida contra `UBL-Invoice-2.1.xsd`.
 6. Guarda el comprobante en estado `Firmado` y responde **201** con `Location`.
 
@@ -487,8 +522,9 @@ sequenceDiagram
     Cajero->>C: POST /api/v1/invoices (JSON)
     C->>C: DTO a comando (valida catálogos, 422 si no existen)
     C->>U: EmitirAsync(comando)
-    U->>S: SiguienteAsync(tipo, serie) (atómico)
     U->>T: Calcular(invoice) (ISC, IGV, ICBPER)
+    U->>U: Validar prefijo de la serie (F factura, B boleta)
+    U->>S: SiguienteAsync(tipo, serie) (atómico)
     U->>G: GenerarXmlUbl21(invoice)
     U->>F: Firmar(xml) (XMLDSig)
     U->>V: Validar(xml firmado) contra UBL-Invoice-2.1.xsd
@@ -976,6 +1012,34 @@ Estructura de la RS 042-2018/SUNAT (vigente desde 2019). La migración alimenta 
 
 Esta estructura explica el diseño de la migración: una tupla de **saldo inicial** por producto y el detalle original en la auditoría.
 
+### 11.7 Reglas de validación de SUNAT y base legal
+
+#### Base legal: RS 097-2012/SUNAT
+
+La **Resolución de Superintendencia N.° 097-2012/SUNAT** (y modificatorias) es la norma que sustenta la emisión electrónica **desde los sistemas del contribuyente**: el emisor genera el comprobante con su propio sistema y lo envía a SUNAT. Alcanza a la factura, la boleta de venta y las notas de crédito y débito (fuente: [orientación SUNAT, emisión electrónica desde los sistemas del contribuyente](https://orientacion.sunat.gob.pe/node/708)). Este proyecto es justamente ese tipo de sistema. El texto completo de la resolución no se transcribe aquí; se cita como fundamento y el detalle técnico sale del Manual del Programador y de los XSD.
+
+#### Las reglas de validación (XSL)
+
+SUNAT publica, aparte de los XSD, archivos **XSL de validación** (`ValidaExprReg*.xsl`, versión "actualizado al 06/09/2022"). Cada uno valida los formatos de un tipo de documento con expresiones regulares y devuelve un **código de error**. Se revisaron los del paquete entregado por el profesor:
+
+| Archivo XSL | Documento | Reglas (llamadas de validación) | Códigos de error distintos |
+|:---|:---|---:|---:|
+| `ValidaExprRegFactura-2.0.1.xsl` | Factura | 1552 | 411 |
+| `ValidaExprRegBoleta-2.0.1.xsl` | Boleta | 1231 | 346 |
+| `ValidaExprRegNC-2.0.1.xsl` | Nota de crédito | 799 | 252 |
+| `ValidaExprRegND-2.0.1.xsl` | Nota de débito | 742 | 247 |
+
+Cómo se relacionan con este proyecto:
+
+| Capa de validación | Qué comprueba | Dónde está |
+|:---|:---|:---|
+| 1. Estructura | El XML cumple `UBL-Invoice-2.1.xsd` (y, para las notas, `UBL-CreditNote-2.1.xsd` y `UBL-DebitNote-2.1.xsd`, que ya se tienen en el paquete de XSD) | `ValidadorXsdUbl` |
+| 2. Formato y catálogos | Reglas de los XSL: expresiones regulares y valores de catálogo (por ejemplo, `cbc:ResponseCode` de la nota de crédito debe pertenecer al Catálogo 09 y su `@listURI` debe ser `urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo09`) | Se cubre en parte con los enums de catálogo, `Ruc`, `SerieComprobante` y la validación del DTO |
+| 3. Reglas de negocio | Cálculos y coherencias (IGV, totales, boleta de S/ 700) | `CalculadoraTributos`, `EmitirFacturaService` |
+| 4. Validación en línea | Respuesta real de SUNAT (CDR, códigos 0, 2000 a 3999, 4000+) | `ClienteSoapSunat` (sección 9.3) |
+
+**Lo que NO se hace todavía:** no se ejecutan los XSL de SUNAT dentro de las pruebas (son XSLT 1.0 con muchas dependencias del esquema 2.0) y no se verificó el XML contra el validador en línea [probar-xml.nubefact.com](https://probar-xml.nubefact.com). Ese contraste se hace a mano subiendo `docs/ejemplos/*.xml`; el resultado debe anotarse en la sección 13.
+
 ## 12. Distribución y plataformas
 
 | Plataforma | Formato obligatorio | Archivo de especificación | Estado |
@@ -995,6 +1059,7 @@ Todo lo siguiente se ejecutó antes de entregar:
 |:---|:---|
 | `dotnet test` con xUnit real (SDK 8.0.428, Ubuntu en WSL, tras clonar y copiar el proyecto) | **153 pruebas, 0 fallas** |
 | Pruebas agregadas después (ejemplo C de la guía, textos de atributos, `LineCountNumeric`): 166 en total | Verificadas con un ejecutor propio que imita xUnit; confirmar con `dotnet test` |
+| Catálogos 09 (13 códigos), 07 (19) y 14, y totales por tipo de operación: 173 en total | **173 pruebas, 0 fallos, 0 omitidas** (xUnit real, net8.0, Ubuntu en WSL, copia en carpeta aparte) |
 | Prueba de mutación: se cambió la tasa del IGV a 19 % | 11 pruebas fallaron; al restaurarla pasaron todas |
 | Validación del XML generado contra `UBL-Invoice-2.1.xsd` con .NET (`XmlSchemaSet`) y, de forma independiente, con `lxml`/libxml2 | Factura y boleta de ejemplo **válidas** en ambos validadores |
 | Firma XMLDSig: verificación y alteración posterior del XML | Válida; **inválida** al modificar el XML |
@@ -1009,9 +1074,8 @@ Todo lo siguiente se ejecutó antes de entregar:
 
 ## 14. Limitaciones y trabajo futuro
 
-- Notas de crédito y débito, comunicación de baja, resumen diario de boletas y `getStatus`: el contrato existe en el OpenAPI; falta el código.
+- Notas de crédito y débito (el catálogo 09 ya está completo con 13 códigos y los XSD `CreditNote` y `DebitNote` ya están disponibles; falta el generador), comunicación de baja, resumen diario de boletas y `getStatus`: el contrato existe en el OpenAPI; falta el código.
 - ISC sistema 03 (precio de venta al público) e IVAP (afectación 17): requieren las fórmulas del Apéndice IV del T.U.O. del IGV e ISC.
 - Descuentos, cargos, anticipos, detracción y `cac:CommodityClassification` (UNSPSC).
 - Persistencia SQL, cola real de contingencia con reintentos, y autenticación JWT.
 - El tratamiento XML de las operaciones gratuitas debe cotejarse con el ejemplo correspondiente de la guía de SUNAT antes de producción.
-- Las pruebas son un programa de consola sin paquetes; al disponer de NuGet conviene migrarlas a xUnit.
