@@ -2,19 +2,18 @@
 <Invoice xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
   <ext:UBLExtensions>
     <ext:UBLExtension>
-      <ext:ExtensionContent><Signature Id="SignABC" xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" /><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" /><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" /><DigestValue>BAcmtiREP7Zkdvq432HhMZzZAKs=</DigestValue></Reference></SignedInfo><SignatureValue>YbT0aTsNYy/j2gqQPN9lNhY7gqcr1eEJ2LwEkadrRIZnB0I2S1pxseKA8dppVUbBmMYpgvOidoJfvFkSC5zKs9mfB6KOFA+TSlBQCNfN+3vZRx8yHJkxFLQhHMQfvcZxZqooVUdsosUvFON/iu3SwJk1z9hBNn4peKF4Oa4i3x/IdACPipxp5Fgo7D+kLNvRsNAREZSHZnXyz3resFlzNbDEHmK8ETDgVLUtcwAyk2KqIh0qoKIzIm1mGdDtKwiNA2Mgzr0h46s1ZESixmfPp0Vzhxg5vRQv1uI94osIEjCITkZNucvBdsyyisZtC69bUc/AS64OAQSN97zbUbkBlw==</SignatureValue><KeyInfo><X509Data><X509Certificate>MIIDSDCCAjCgAwIBAgIILdCf3LLgPLgwDQYJKoZIhvcNAQELBQAwZDELMAkGA1UEBhMCUEUxGjAYBgNVBAoTEUFCQyBTb2Z0d2FyZSBDb3JwMRQwEgYDVQQLEwsyMDYwMDAwMDAxMzEjMCEGA1UEAxMaQUJDIFNvZnR3YXJlIENvcnAgKFBSVUVCQSkwHhcNMjYxMTExMDI0MzE0WhcNMjcxMTEyMDI0MzE0WjBkMQswCQYDVQQGEwJQRTEaMBgGA1UEChMRQUJDIFNvZnR3YXJlIENvcnAxFDASBgNVBAsTCzIwNjAwMDAwMDEzMSMwIQYDVQQDExpBQkMgU29mdHdhcmUgQ29ycCAoUFJVRUJBKTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALSd3lk169v1J/0+nI4bFrrgOe1AfQhXT980T/Q73AxWq7PNSAuUfTjqwuWUv9+nKQK6Y9nCEb3OjnxKszbRZ1ZqbtD91stgiIvvfyrxF1YJp68LF2u1tnK6bsuO3RPhUXXaY8iHTd22IJGdZiVouAgK4d2bwEK4/rHceD9+tocyvhX0RJt59GjFeZQLFCVAxT2qJ4/RVgiRTS1f5sLqYfzVa66miCw3cCMYGtXEEBYILAtzsc3608LNVYzDdumVWjexpUx7Lef7HOlW71nK2LcHDiPOSRMIipKZ5R2HdyWvVU/V53YT3mWcKLSgnsojwWDfYNLxDcUPqGBvNFmUpT8CAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAijV1Uyk/6c7PjfNBdWEY/rfTMOqsoiqcz+Tk3eVaGjvIMIkiVpYIv6enESOWvH360gZRmK+pUIXR+AH4bfIi/o8TK/83V5JALfmWVzw/eLMzVsXZyXhPVLlJ2lZFW15pD1jHODUByxI7Y0/L06O/y9+bGZxLxLuH+ndVyRmdG8dUjgHz+LVkQ90Pi7pUrChdtpB67xXk81R1YKSuD3fFx0lEgF7eBlu2vi0DqoXlWg0es3X2q6+qcXzC0y1uslWit/tRHbyBG9dII1D6G2lke2wyVTtBOAQsXuQ39ab6m3HjR2/CgJZJysk/BU9Nhpbs6fyTuKt1Rzl7T9iVbhAZlQ==</X509Certificate></X509Data></KeyInfo></Signature></ext:ExtensionContent>
+      <ext:ExtensionContent><Signature Id="SignABC" xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" /><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" /><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" /><DigestValue>ogTXwknPrT7Y8rbdpX8tbDnuHIc=</DigestValue></Reference></SignedInfo><SignatureValue>gLCmllTAbNnS52oGL6t9SaijhBAg1v5b/XhQLlvn3rNPB7sK1bN4VFcDZyuzKm9PZ0AmIad/L+POltWhJJ2AV7Mt4eRILjRRDWpdLYfiptfTADAYfZeYT6mrpPCbcASGTrGI+I3Fk4blTiKrLlQHBDLIJNe0uXdVB5Af3VJyWHk+C/Ey/S50nLlggHixTsX7gGNkn3RVRRoMAZN/oGUC8H1/0Joa012gBvPe+ZkHmFBTHTRwoty7ktDowQfXNUTggl76KAlzNi+vKL+RELpTFXmNWLx3RIID1lAlzRwOA6C4i1UjuRIMvorPNci7ERQs5hpHD1HR+wnxCrpGbh/m3w==</SignatureValue><KeyInfo><X509Data><X509Certificate>MIIDSTCCAjGgAwIBAgIJAKGRQR9aG7TiMA0GCSqGSIb3DQEBCwUAMGQxCzAJBgNVBAYTAlBFMRowGAYDVQQKExFBQkMgU29mdHdhcmUgQ29ycDEUMBIGA1UECxMLMjA2MDAwMDAwMTMxIzAhBgNVBAMTGkFCQyBTb2Z0d2FyZSBDb3JwIChQUlVFQkEpMB4XDTI2MTExMTIzMDA0M1oXDTI3MTExMjIzMDA0M1owZDELMAkGA1UEBhMCUEUxGjAYBgNVBAoTEUFCQyBTb2Z0d2FyZSBDb3JwMRQwEgYDVQQLEwsyMDYwMDAwMDAxMzEjMCEGA1UEAxMaQUJDIFNvZnR3YXJlIENvcnAgKFBSVUVCQSkwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC8plwZooF7eH+XdpoXHrye+Fb2xYn4W3O0LQF5c7qDulnT+ShlleIjXENAI0m4sQlfatskTAWOKpuCwsRL/lgMSfvKOBdqYWJ+uEud6tURfV0sBFTAPjscAmFINisBpg9Cr87NuYc6IvM5IEtx20dkRKP84ZjgX4CVArHT69lHsRO3P2lfA8A9Ld6Sf7XVUtnmMLBDNE6SjQZO1fViYEcoK1CrSUrooJzCP7TXhjccmqFzpAv+vAr9Zhdqtx6/RDP2/zf0CxgiiDCvCmW9WA/T8/3lR3bK6iAoJ2A0sViJw7w9IcggZp7xNRR+BHXwrBlEml6KvBR7UD3urPAphjZPAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAKH3ARpkoUMIPGb+KH/GC33pTj9S/QFjKWT0GA5V4RKKAJ52hYibU/ruz6z0OeIXOJeHMG2uPJvFX7uQWq2BtupVx1Tkf1nlbxiVOxQvPFIzJpLKdlyEhAtizV0TyYdCU4wisbytQBWfGAjK9rRjUaQWU/j3h4sa3LWN1g3c9iiUIGtLMVsaTcIEBdGEyLpckATi74KSQW3lZGxX3RXrEKokarIxwZxsUnhevVFdCytoBrf3ARYWTO3nkrNcK/DUHX4nH6yeY8BZiednu4W25KmYxckFAc+hXOqeWepHCXboyWF/4qP1ElEd3Wyq7WPJkJAXMrq/c71LdLRqI6RgXDM=</X509Certificate></X509Data></KeyInfo></Signature></ext:ExtensionContent>
     </ext:UBLExtension>
   </ext:UBLExtensions>
   <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
   <cbc:CustomizationID>2.0</cbc:CustomizationID>
-  <cbc:ProfileID schemeName="SUNAT:Identificador de Tipo de Operación" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo17">0101</cbc:ProfileID>
   <cbc:ID>F001-1</cbc:ID>
   <cbc:IssueDate>2026-11-03</cbc:IssueDate>
   <cbc:IssueTime>10:15:00</cbc:IssueTime>
-  <cbc:InvoiceTypeCode listAgencyName="PE:SUNAT" listName="SUNAT:Identificador de Tipo de Documento" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01">01</cbc:InvoiceTypeCode>
-  <cbc:Note languageLocaleID="1000">SON: TRESCIENTOS VEINTIUNO Y 19/100 SOLES</cbc:Note>
+  <cbc:InvoiceTypeCode listID="0101" listAgencyName="PE:SUNAT" listName="Tipo de Documento" name="Tipo de Operacion" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01" listSchemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo51">01</cbc:InvoiceTypeCode>
+  <cbc:Note languageLocaleID="1000">SON: DOSCIENTOS OCHENTA Y DOS Y 25/100 SOLES</cbc:Note>
   <cbc:DocumentCurrencyCode listID="ISO 4217 Alpha" listAgencyName="United Nations Economic Commission for Europe" listName="Currency">PEN</cbc:DocumentCurrencyCode>
-  <cbc:LineCountNumeric>6</cbc:LineCountNumeric>
+  <cbc:LineCountNumeric>5</cbc:LineCountNumeric>
   <cac:Signature>
     <cbc:ID>SignABC</cbc:ID>
     <cac:SignatoryParty>
@@ -33,55 +32,45 @@
   </cac:Signature>
   <cac:AccountingSupplierParty>
     <cac:Party>
+      <cac:PartyIdentification>
+        <cbc:ID schemeID="6" schemeName="Documento de Identidad" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06">20600000013</cbc:ID>
+      </cac:PartyIdentification>
       <cac:PartyName>
         <cbc:Name>ABC Abarrotes</cbc:Name>
       </cac:PartyName>
-      <cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
         <cbc:RegistrationName>ABC SOFTWARE CORP S.A.C.</cbc:RegistrationName>
-        <cbc:CompanyID schemeID="6" schemeName="SUNAT:Identificador de Documento de Identidad" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06">20600000013</cbc:CompanyID>
         <cac:RegistrationAddress>
-          <cbc:AddressTypeCode>0000</cbc:AddressTypeCode>
+          <cbc:AddressTypeCode listAgencyName="PE:SUNAT" listName="Establecimientos anexos">0000</cbc:AddressTypeCode>
         </cac:RegistrationAddress>
-        <cac:TaxScheme>
-          <cbc:ID>-</cbc:ID>
-        </cac:TaxScheme>
-      </cac:PartyTaxScheme>
+      </cac:PartyLegalEntity>
     </cac:Party>
   </cac:AccountingSupplierParty>
   <cac:AccountingCustomerParty>
     <cac:Party>
-      <cac:PartyTaxScheme>
-        <cbc:RegistrationName>BODEGA "EL ÑANDÚ" &amp; HIJOS S.A.C. &lt;prueba&gt;</cbc:RegistrationName>
-        <cbc:CompanyID schemeID="6" schemeName="SUNAT:Identificador de Documento de Identidad" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06">20123456786</cbc:CompanyID>
-        <cac:TaxScheme>
-          <cbc:ID>-</cbc:ID>
-        </cac:TaxScheme>
-      </cac:PartyTaxScheme>
+      <cac:PartyIdentification>
+        <cbc:ID schemeID="6" schemeName="Documento de Identidad" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06">20123456786</cbc:ID>
+      </cac:PartyIdentification>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>BODEGA "EL NANDU" &amp; HIJOS S.A.C. &lt;prueba&gt;</cbc:RegistrationName>
+      </cac:PartyLegalEntity>
     </cac:Party>
   </cac:AccountingCustomerParty>
+  <cac:PaymentTerms>
+    <cbc:ID>FormaPago</cbc:ID>
+    <cbc:PaymentMeansID>Contado</cbc:PaymentMeansID>
+  </cac:PaymentTerms>
   <cac:TaxTotal>
-    <cbc:TaxAmount currencyID="PEN">42.89</cbc:TaxAmount>
+    <cbc:TaxAmount currencyID="PEN">33.95</cbc:TaxAmount>
     <cac:TaxSubtotal>
-      <cbc:TaxableAmount currencyID="PEN">213.30</cbc:TaxableAmount>
-      <cbc:TaxAmount currencyID="PEN">38.39</cbc:TaxAmount>
+      <cbc:TaxableAmount currencyID="PEN">180.30</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="PEN">32.45</cbc:TaxAmount>
       <cac:TaxCategory>
         <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
         <cac:TaxScheme>
-          <cbc:ID schemeID="UN/ECE 5153" schemeAgencyID="6">1000</cbc:ID>
+          <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">1000</cbc:ID>
           <cbc:Name>IGV</cbc:Name>
           <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
-        </cac:TaxScheme>
-      </cac:TaxCategory>
-    </cac:TaxSubtotal>
-    <cac:TaxSubtotal>
-      <cbc:TaxableAmount currencyID="PEN">30.00</cbc:TaxableAmount>
-      <cbc:TaxAmount currencyID="PEN">3.00</cbc:TaxAmount>
-      <cac:TaxCategory>
-        <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
-        <cac:TaxScheme>
-          <cbc:ID schemeID="UN/ECE 5153" schemeAgencyID="6">2000</cbc:ID>
-          <cbc:Name>ISC</cbc:Name>
-          <cbc:TaxTypeCode>EXC</cbc:TaxTypeCode>
         </cac:TaxScheme>
       </cac:TaxCategory>
     </cac:TaxSubtotal>
@@ -91,8 +80,8 @@
       <cac:TaxCategory>
         <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">E</cbc:ID>
         <cac:TaxScheme>
-          <cbc:ID schemeID="UN/ECE 5153" schemeAgencyID="6">9997</cbc:ID>
-          <cbc:Name>EXONERADO</cbc:Name>
+          <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">9997</cbc:ID>
+          <cbc:Name>EXO</cbc:Name>
           <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
         </cac:TaxScheme>
       </cac:TaxCategory>
@@ -103,8 +92,8 @@
       <cac:TaxCategory>
         <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">O</cbc:ID>
         <cac:TaxScheme>
-          <cbc:ID schemeID="UN/ECE 5153" schemeAgencyID="6">9998</cbc:ID>
-          <cbc:Name>INAFECTO</cbc:Name>
+          <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">9998</cbc:ID>
+          <cbc:Name>INA</cbc:Name>
           <cbc:TaxTypeCode>FRE</cbc:TaxTypeCode>
         </cac:TaxScheme>
       </cac:TaxCategory>
@@ -115,8 +104,8 @@
       <cac:TaxCategory>
         <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">Z</cbc:ID>
         <cac:TaxScheme>
-          <cbc:ID schemeID="UN/ECE 5153" schemeAgencyID="6">9996</cbc:ID>
-          <cbc:Name>GRATUITO</cbc:Name>
+          <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">9996</cbc:ID>
+          <cbc:Name>GRA</cbc:Name>
           <cbc:TaxTypeCode>FRE</cbc:TaxTypeCode>
         </cac:TaxScheme>
       </cac:TaxCategory>
@@ -126,7 +115,7 @@
       <cac:TaxCategory>
         <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
         <cac:TaxScheme>
-          <cbc:ID schemeID="UN/ECE 5153" schemeAgencyID="6">7152</cbc:ID>
+          <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">7152</cbc:ID>
           <cbc:Name>ICBPER</cbc:Name>
           <cbc:TaxTypeCode>OTH</cbc:TaxTypeCode>
         </cac:TaxScheme>
@@ -134,9 +123,9 @@
     </cac:TaxSubtotal>
   </cac:TaxTotal>
   <cac:LegalMonetaryTotal>
-    <cbc:LineExtensionAmount currencyID="PEN">278.30</cbc:LineExtensionAmount>
-    <cbc:TaxInclusiveAmount currencyID="PEN">321.19</cbc:TaxInclusiveAmount>
-    <cbc:PayableAmount currencyID="PEN">321.19</cbc:PayableAmount>
+    <cbc:LineExtensionAmount currencyID="PEN">248.30</cbc:LineExtensionAmount>
+    <cbc:TaxInclusiveAmount currencyID="PEN">282.25</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="PEN">282.25</cbc:PayableAmount>
   </cac:LegalMonetaryTotal>
   <cac:InvoiceLine>
     <cbc:ID>1</cbc:ID>
@@ -145,7 +134,7 @@
     <cac:PricingReference>
       <cac:AlternativeConditionPrice>
         <cbc:PriceAmount currencyID="PEN">21.24</cbc:PriceAmount>
-        <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="SUNAT:Indicador de Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
+        <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
       </cac:AlternativeConditionPrice>
     </cac:PricingReference>
     <cac:TaxTotal>
@@ -156,9 +145,9 @@
         <cac:TaxCategory>
           <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
           <cbc:Percent>18.00</cbc:Percent>
-          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="SUNAT:Codigo de Tipo de Afectación del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
+          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="Afectacion del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
           <cac:TaxScheme>
-            <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">1000</cbc:ID>
+            <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">1000</cbc:ID>
             <cbc:Name>IGV</cbc:Name>
             <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
           </cac:TaxScheme>
@@ -177,63 +166,12 @@
   </cac:InvoiceLine>
   <cac:InvoiceLine>
     <cbc:ID>2</cbc:ID>
-    <cbc:InvoicedQuantity unitCode="NIU" unitCodeListID="UN/ECE rec 20" unitCodeListAgencyName="United Nations Economic Commission for Europe">6</cbc:InvoicedQuantity>
-    <cbc:LineExtensionAmount currencyID="PEN">30.00</cbc:LineExtensionAmount>
-    <cac:PricingReference>
-      <cac:AlternativeConditionPrice>
-        <cbc:PriceAmount currencyID="PEN">6.49</cbc:PriceAmount>
-        <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="SUNAT:Indicador de Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
-      </cac:AlternativeConditionPrice>
-    </cac:PricingReference>
-    <cac:TaxTotal>
-      <cbc:TaxAmount currencyID="PEN">8.94</cbc:TaxAmount>
-      <cac:TaxSubtotal>
-        <cbc:TaxableAmount currencyID="PEN">30.00</cbc:TaxableAmount>
-        <cbc:TaxAmount currencyID="PEN">3.00</cbc:TaxAmount>
-        <cac:TaxCategory>
-          <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
-          <cbc:Percent>10.00</cbc:Percent>
-          <cbc:TierRange>01</cbc:TierRange>
-          <cac:TaxScheme>
-            <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">2000</cbc:ID>
-            <cbc:Name>ISC</cbc:Name>
-            <cbc:TaxTypeCode>EXC</cbc:TaxTypeCode>
-          </cac:TaxScheme>
-        </cac:TaxCategory>
-      </cac:TaxSubtotal>
-      <cac:TaxSubtotal>
-        <cbc:TaxableAmount currencyID="PEN">33.00</cbc:TaxableAmount>
-        <cbc:TaxAmount currencyID="PEN">5.94</cbc:TaxAmount>
-        <cac:TaxCategory>
-          <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
-          <cbc:Percent>18.00</cbc:Percent>
-          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="SUNAT:Codigo de Tipo de Afectación del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
-          <cac:TaxScheme>
-            <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">1000</cbc:ID>
-            <cbc:Name>IGV</cbc:Name>
-            <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
-          </cac:TaxScheme>
-        </cac:TaxCategory>
-      </cac:TaxSubtotal>
-    </cac:TaxTotal>
-    <cac:Item>
-      <cbc:Description>Cerveza 620 ml (ISC al valor, tasa de prueba 10 %)</cbc:Description>
-      <cac:SellersItemIdentification>
-        <cbc:ID>CER-620</cbc:ID>
-      </cac:SellersItemIdentification>
-    </cac:Item>
-    <cac:Price>
-      <cbc:PriceAmount currencyID="PEN">5.00</cbc:PriceAmount>
-    </cac:Price>
-  </cac:InvoiceLine>
-  <cac:InvoiceLine>
-    <cbc:ID>3</cbc:ID>
     <cbc:InvoicedQuantity unitCode="KGM" unitCodeListID="UN/ECE rec 20" unitCodeListAgencyName="United Nations Economic Commission for Europe">5</cbc:InvoicedQuantity>
     <cbc:LineExtensionAmount currencyID="PEN">60.00</cbc:LineExtensionAmount>
     <cac:PricingReference>
       <cac:AlternativeConditionPrice>
         <cbc:PriceAmount currencyID="PEN">12.00</cbc:PriceAmount>
-        <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="SUNAT:Indicador de Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
+        <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
       </cac:AlternativeConditionPrice>
     </cac:PricingReference>
     <cac:TaxTotal>
@@ -243,10 +181,11 @@
         <cbc:TaxAmount currencyID="PEN">0.00</cbc:TaxAmount>
         <cac:TaxCategory>
           <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">E</cbc:ID>
-          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="SUNAT:Codigo de Tipo de Afectación del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">20</cbc:TaxExemptionReasonCode>
+          <cbc:Percent>0.00</cbc:Percent>
+          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="Afectacion del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">20</cbc:TaxExemptionReasonCode>
           <cac:TaxScheme>
-            <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">9997</cbc:ID>
-            <cbc:Name>EXONERADO</cbc:Name>
+            <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">9997</cbc:ID>
+            <cbc:Name>EXO</cbc:Name>
             <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
           </cac:TaxScheme>
         </cac:TaxCategory>
@@ -263,13 +202,13 @@
     </cac:Price>
   </cac:InvoiceLine>
   <cac:InvoiceLine>
-    <cbc:ID>4</cbc:ID>
+    <cbc:ID>3</cbc:ID>
     <cbc:InvoicedQuantity unitCode="NIU" unitCodeListID="UN/ECE rec 20" unitCodeListAgencyName="United Nations Economic Commission for Europe">2</cbc:InvoicedQuantity>
     <cbc:LineExtensionAmount currencyID="PEN">8.00</cbc:LineExtensionAmount>
     <cac:PricingReference>
       <cac:AlternativeConditionPrice>
         <cbc:PriceAmount currencyID="PEN">4.00</cbc:PriceAmount>
-        <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="SUNAT:Indicador de Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
+        <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
       </cac:AlternativeConditionPrice>
     </cac:PricingReference>
     <cac:TaxTotal>
@@ -279,10 +218,11 @@
         <cbc:TaxAmount currencyID="PEN">0.00</cbc:TaxAmount>
         <cac:TaxCategory>
           <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">O</cbc:ID>
-          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="SUNAT:Codigo de Tipo de Afectación del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">30</cbc:TaxExemptionReasonCode>
+          <cbc:Percent>0.00</cbc:Percent>
+          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="Afectacion del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">30</cbc:TaxExemptionReasonCode>
           <cac:TaxScheme>
-            <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">9998</cbc:ID>
-            <cbc:Name>INAFECTO</cbc:Name>
+            <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">9998</cbc:ID>
+            <cbc:Name>INA</cbc:Name>
             <cbc:TaxTypeCode>FRE</cbc:TaxTypeCode>
           </cac:TaxScheme>
         </cac:TaxCategory>
@@ -299,13 +239,13 @@
     </cac:Price>
   </cac:InvoiceLine>
   <cac:InvoiceLine>
-    <cbc:ID>5</cbc:ID>
+    <cbc:ID>4</cbc:ID>
     <cbc:InvoicedQuantity unitCode="NIU" unitCodeListID="UN/ECE rec 20" unitCodeListAgencyName="United Nations Economic Commission for Europe">3</cbc:InvoicedQuantity>
     <cbc:LineExtensionAmount currencyID="PEN">0.30</cbc:LineExtensionAmount>
     <cac:PricingReference>
       <cac:AlternativeConditionPrice>
         <cbc:PriceAmount currencyID="PEN">0.1166666667</cbc:PriceAmount>
-        <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="SUNAT:Indicador de Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
+        <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
       </cac:AlternativeConditionPrice>
     </cac:PricingReference>
     <cac:TaxTotal>
@@ -316,9 +256,9 @@
         <cac:TaxCategory>
           <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
           <cbc:Percent>18.00</cbc:Percent>
-          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="SUNAT:Codigo de Tipo de Afectación del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
+          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="Afectacion del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
           <cac:TaxScheme>
-            <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">1000</cbc:ID>
+            <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">1000</cbc:ID>
             <cbc:Name>IGV</cbc:Name>
             <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
           </cac:TaxScheme>
@@ -331,7 +271,7 @@
           <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
           <cbc:PerUnitAmount currencyID="PEN">0.50</cbc:PerUnitAmount>
           <cac:TaxScheme>
-            <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">7152</cbc:ID>
+            <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">7152</cbc:ID>
             <cbc:Name>ICBPER</cbc:Name>
             <cbc:TaxTypeCode>OTH</cbc:TaxTypeCode>
           </cac:TaxScheme>
@@ -339,7 +279,7 @@
       </cac:TaxSubtotal>
     </cac:TaxTotal>
     <cac:Item>
-      <cbc:Description>Bolsa de plástico</cbc:Description>
+      <cbc:Description>Bolsa de plastico</cbc:Description>
       <cac:SellersItemIdentification>
         <cbc:ID>BOL-PLA</cbc:ID>
       </cac:SellersItemIdentification>
@@ -349,27 +289,27 @@
     </cac:Price>
   </cac:InvoiceLine>
   <cac:InvoiceLine>
-    <cbc:ID>6</cbc:ID>
+    <cbc:ID>5</cbc:ID>
     <cbc:InvoicedQuantity unitCode="NIU" unitCodeListID="UN/ECE rec 20" unitCodeListAgencyName="United Nations Economic Commission for Europe">1</cbc:InvoicedQuantity>
-    <cbc:LineExtensionAmount currencyID="PEN">0.00</cbc:LineExtensionAmount>
+    <cbc:LineExtensionAmount currencyID="PEN">20.00</cbc:LineExtensionAmount>
     <cac:PricingReference>
       <cac:AlternativeConditionPrice>
         <cbc:PriceAmount currencyID="PEN">20.00</cbc:PriceAmount>
-        <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="SUNAT:Indicador de Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">02</cbc:PriceTypeCode>
+        <cbc:PriceTypeCode listAgencyName="PE:SUNAT" listName="Tipo de Precio" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">02</cbc:PriceTypeCode>
       </cac:AlternativeConditionPrice>
     </cac:PricingReference>
     <cac:TaxTotal>
-      <cbc:TaxAmount currencyID="PEN">3.60</cbc:TaxAmount>
+      <cbc:TaxAmount currencyID="PEN">0.00</cbc:TaxAmount>
       <cac:TaxSubtotal>
         <cbc:TaxableAmount currencyID="PEN">20.00</cbc:TaxableAmount>
         <cbc:TaxAmount currencyID="PEN">3.60</cbc:TaxAmount>
         <cac:TaxCategory>
           <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">Z</cbc:ID>
           <cbc:Percent>18.00</cbc:Percent>
-          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="SUNAT:Codigo de Tipo de Afectación del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">11</cbc:TaxExemptionReasonCode>
+          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="Afectacion del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">11</cbc:TaxExemptionReasonCode>
           <cac:TaxScheme>
-            <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">9996</cbc:ID>
-            <cbc:Name>GRATUITO</cbc:Name>
+            <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">9996</cbc:ID>
+            <cbc:Name>GRA</cbc:Name>
             <cbc:TaxTypeCode>FRE</cbc:TaxTypeCode>
           </cac:TaxScheme>
         </cac:TaxCategory>

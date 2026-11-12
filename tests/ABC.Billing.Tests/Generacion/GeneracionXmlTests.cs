@@ -48,7 +48,8 @@ public class GeneracionXmlTests
     public void El_tipo_de_documento_y_el_tipo_de_operacion_usan_codigos_de_catalogo()
     {
         Assert.Equal("01", Raiz.Element(Cbc + "InvoiceTypeCode")!.Value);   // Catálogo 01
-        Assert.Equal("0101", Raiz.Element(Cbc + "ProfileID")!.Value);       // Catálogo 51
+        Assert.Equal("0101", Raiz.Element(Cbc + "InvoiceTypeCode")!.Attribute("listID")!.Value);   // Catálogo 51 (SUNAT lo lee de @listID)
+        Assert.Null(Raiz.Element(Cbc + "ProfileID"));
     }
 
     [Fact]
@@ -68,17 +69,17 @@ public class GeneracionXmlTests
     [Fact]
     public void Incluye_al_emisor_con_RUC_y_esquema_de_documento_6()
     {
-        var esquema = Raiz.Element(Cac + "AccountingSupplierParty")!.Descendants(Cac + "PartyTaxScheme").Single();
-        var ruc = esquema.Element(Cbc + "CompanyID")!;
+        var emisor = Raiz.Element(Cac + "AccountingSupplierParty")!.Element(Cac + "Party")!;
+        var ruc = emisor.Element(Cac + "PartyIdentification")!.Element(Cbc + "ID")!;
         Assert.Equal(Fabrica.RucEmisor, ruc.Value);
         Assert.Equal("6", ruc.Attribute("schemeID")!.Value);                 // Catálogo 06
-        Assert.Equal("ABC SOFTWARE CORP S.A.C.", esquema.Element(Cbc + "RegistrationName")!.Value);
+        Assert.Equal("ABC SOFTWARE CORP S.A.C.", emisor.Element(Cac + "PartyLegalEntity")!.Element(Cbc + "RegistrationName")!.Value);
     }
 
     [Fact]
     public void Incluye_al_cliente_con_su_tipo_de_documento()
     {
-        var ruc = Raiz.Element(Cac + "AccountingCustomerParty")!.Descendants(Cbc + "CompanyID").Single();
+        var ruc = Raiz.Element(Cac + "AccountingCustomerParty")!.Descendants(Cac + "PartyIdentification").Single().Element(Cbc + "ID")!;
         Assert.Equal(Fabrica.RucCliente, ruc.Value);
         Assert.Equal("6", ruc.Attribute("schemeID")!.Value);
     }
@@ -95,9 +96,9 @@ public class GeneracionXmlTests
     [Theory]
     [InlineData("1000", "IGV", "VAT", "S")]
     [InlineData("2000", "ISC", "EXC", "S")]
-    [InlineData("9997", "EXONERADO", "VAT", "E")]
-    [InlineData("9998", "INAFECTO", "FRE", "O")]
-    [InlineData("9996", "GRATUITO", "FRE", "Z")]
+    [InlineData("9997", "EXO", "VAT", "E")]
+    [InlineData("9998", "INA", "FRE", "O")]
+    [InlineData("9996", "GRA", "FRE", "Z")]
     [InlineData("7152", "ICBPER", "OTH", "S")]
     public void Cada_tributo_se_describe_segun_el_Catalogo_05_y_la_guia_de_SUNAT(string codigo, string nombre, string codigoInternacional, string categoria)
     {
@@ -161,7 +162,9 @@ public class GeneracionXmlTests
         Assert.Equal(Completo.TotalOperacionesExoneradas, Num(SubtotalCabecera("9997").Element(Cbc + "TaxableAmount")!));
         Assert.Equal(Completo.TotalOperacionesInafectas, Num(SubtotalCabecera("9998").Element(Cbc + "TaxableAmount")!));
         Assert.Equal(Completo.ImporteTotalPagar, Num(Raiz.Descendants(Cbc + "PayableAmount").Single()));
-        Assert.Equal(Completo.Lineas.Sum(l => l.ValorVenta), Raiz.Elements(Cac + "InvoiceLine").Sum(l => Num(l.Element(Cbc + "LineExtensionAmount")!)));
+        // En las líneas gratuitas el valor de línea es el valor referencial (SUNAT, error 3271); no entran en el total de la venta
+        Assert.Equal(Completo.Lineas.Sum(l => l.AfectacionIgv.EsGratuita() ? l.ValorReferencialTotal : l.ValorVenta),
+            Raiz.Elements(Cac + "InvoiceLine").Sum(l => Num(l.Element(Cbc + "LineExtensionAmount")!)));
     }
 
     [Fact]
@@ -183,7 +186,7 @@ public class GeneracionXmlTests
     public void La_operacion_gratuita_va_con_precio_cero_y_valor_referencial()
     {
         var l = Linea(6);
-        Assert.Equal("0.00", l.Element(Cbc + "LineExtensionAmount")!.Value);
+        Assert.Equal("20.00", l.Element(Cbc + "LineExtensionAmount")!.Value);   // = valor referencial (SUNAT, error 3271)
         Assert.Equal("0.00", l.Element(Cac + "Price")!.Element(Cbc + "PriceAmount")!.Value);
         var referencia = l.Element(Cac + "PricingReference")!.Element(Cac + "AlternativeConditionPrice")!;
         Assert.Equal("02", referencia.Element(Cbc + "PriceTypeCode")!.Value);   // Catálogo 16: valor referencial
@@ -237,7 +240,7 @@ public class GeneracionXmlTests
         var c = Fabrica.Armar([Fabrica.Linea(1, "Quinua para exportación", 100m, 8m, AfectacionIgv.Exportacion, UnidadMedida.KGM)],
             operacion: TipoOperacion.Exportacion, cliente: cliente);
         var raiz = Fabrica.Doc(Fabrica.XmlSinFirma(c)).Root!;
-        Assert.Equal("0102", raiz.Element(Cbc + "ProfileID")!.Value);
+        Assert.Equal("0102", raiz.Element(Cbc + "InvoiceTypeCode")!.Attribute("listID")!.Value);
         var sub = raiz.Element(Cac + "TaxTotal")!.Element(Cac + "TaxSubtotal")!;
         Assert.Equal("9995", sub.Descendants(Cac + "TaxScheme").Single().Element(Cbc + "ID")!.Value);
         Assert.Equal("G", sub.Element(Cac + "TaxCategory")!.Element(Cbc + "ID")!.Value);
@@ -268,47 +271,93 @@ public class GeneracionXmlTests
         => Assert.Equal("6", Raiz.Element(Cbc + "LineCountNumeric")!.Value);
 
     [Fact]
-    public void Los_textos_de_los_atributos_de_catalogo_son_los_de_la_guia_de_SUNAT()
+    public void Los_textos_de_los_atributos_de_catalogo_son_los_que_validan_las_reglas_de_SUNAT()
     {
-        var perfil = Raiz.Element(Cbc + "ProfileID")!;
-        Assert.Equal("SUNAT:Identificador de Tipo de Operación", perfil.Attribute("schemeName")!.Value);
-        Assert.Equal("PE:SUNAT", perfil.Attribute("schemeAgencyName")!.Value);
-
-        Assert.Equal("SUNAT:Identificador de Tipo de Documento", Raiz.Element(Cbc + "InvoiceTypeCode")!.Attribute("listName")!.Value);
+        // Valores tomados de las reglas de validación ValidaExprRegFactura-2.0.1.xsl (errores/observaciones 4252 a 4257)
+        var tipoDoc = Raiz.Element(Cbc + "InvoiceTypeCode")!;
+        Assert.Equal("Tipo de Documento", tipoDoc.Attribute("listName")!.Value);
+        Assert.Equal("PE:SUNAT", tipoDoc.Attribute("listAgencyName")!.Value);
+        Assert.Equal("Tipo de Operacion", tipoDoc.Attribute("name")!.Value);
+        Assert.Equal("urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01", tipoDoc.Attribute("listURI")!.Value);
+        Assert.Equal("urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo51", tipoDoc.Attribute("listSchemeURI")!.Value);
         Assert.Equal("ISO 4217 Alpha", Raiz.Element(Cbc + "DocumentCurrencyCode")!.Attribute("listID")!.Value);
 
-        var ruc = Raiz.Element(Cac + "AccountingSupplierParty")!.Descendants(Cbc + "CompanyID").Single();
-        Assert.Equal("SUNAT:Identificador de Documento de Identidad", ruc.Attribute("schemeName")!.Value);
+        var ruc = Raiz.Element(Cac + "AccountingSupplierParty")!.Descendants(Cac + "PartyIdentification").Single().Element(Cbc + "ID")!;
+        Assert.Equal("Documento de Identidad", ruc.Attribute("schemeName")!.Value);
+        Assert.Equal("PE:SUNAT", ruc.Attribute("schemeAgencyName")!.Value);
         Assert.Equal("urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06", ruc.Attribute("schemeURI")!.Value);
 
         var tipoPrecio = Linea(1).Descendants(Cbc + "PriceTypeCode").Single();
-        Assert.Equal("SUNAT:Indicador de Tipo de Precio", tipoPrecio.Attribute("listName")!.Value);
+        Assert.Equal("Tipo de Precio", tipoPrecio.Attribute("listName")!.Value);
         Assert.Equal("urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16", tipoPrecio.Attribute("listURI")!.Value);
 
         var afectacion = Linea(1).Descendants(Cbc + "TaxExemptionReasonCode").Single();
-        Assert.Equal("SUNAT:Codigo de Tipo de Afectación del IGV", afectacion.Attribute("listName")!.Value);
+        Assert.Equal("Afectacion del IGV", afectacion.Attribute("listName")!.Value);
         Assert.Equal("urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07", afectacion.Attribute("listURI")!.Value);
     }
 
     [Fact]
-    public void El_codigo_de_establecimiento_va_sin_atributos_como_en_la_guia()
+    public void El_codigo_de_establecimiento_del_emisor_va_en_PartyLegalEntity_con_su_lista()
     {
         var codigo = Raiz.Element(Cac + "AccountingSupplierParty")!.Descendants(Cbc + "AddressTypeCode").Single();
         Assert.Equal("0000", codigo.Value);
-        Assert.Empty(codigo.Attributes());
+        Assert.Equal("Establecimientos anexos", codigo.Attribute("listName")!.Value);
+        Assert.Equal("PE:SUNAT", codigo.Attribute("listAgencyName")!.Value);
+        Assert.Equal("PartyLegalEntity", codigo.Parent!.Parent!.Name.LocalName);
     }
 
     [Fact]
-    public void El_TaxScheme_de_cabecera_y_el_de_cada_linea_llevan_los_atributos_que_distingue_la_guia()
+    public void El_TaxScheme_de_cabecera_y_el_de_cada_linea_llevan_los_mismos_atributos_de_catalogo_05()
     {
         var cabecera = SubtotalCabecera("1000").Descendants(Cac + "TaxScheme").Single().Element(Cbc + "ID")!;
-        Assert.Equal("UN/ECE 5153", cabecera.Attribute("schemeID")!.Value);
-        Assert.Equal("6", cabecera.Attribute("schemeAgencyID")!.Value);
-
         var linea = Linea(1).Descendants(Cac + "TaxScheme").Single().Element(Cbc + "ID")!;
-        Assert.Equal("UN/ECE 5153", linea.Attribute("schemeID")!.Value);
-        Assert.Equal("Tax Scheme Identifier", linea.Attribute("schemeName")!.Value);
-        Assert.Equal("United Nations Economic Commission for Europe", linea.Attribute("schemeAgencyName")!.Value);
+        foreach (var id in new[] { cabecera, linea })
+        {
+            Assert.Equal("Codigo de tributos", id.Attribute("schemeName")!.Value);
+            Assert.Equal("PE:SUNAT", id.Attribute("schemeAgencyName")!.Value);
+            Assert.Equal("urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05", id.Attribute("schemeURI")!.Value);
+        }
+    }
+
+    [Fact]
+    public void La_forma_de_pago_es_contado_como_exigen_las_reglas_de_SUNAT()
+    {
+        var pago = Raiz.Element(Cac + "PaymentTerms")!;
+        Assert.Equal("FormaPago", pago.Element(Cbc + "ID")!.Value);
+        Assert.Equal("Contado", pago.Element(Cbc + "PaymentMeansID")!.Value);
+    }
+
+    [Fact]
+    public void El_total_de_impuestos_de_cada_linea_es_la_suma_de_sus_tributos_sin_contar_el_9996_de_las_gratuitas()
+    {
+        // Regla 3292 de SUNAT/OSE: TaxTotal/TaxAmount de la línea = suma de los subtotales 1000, 1016, 2000, 7152 y 9999.
+        foreach (var linea in Raiz.Elements(Cac + "InvoiceLine"))
+        {
+            var total = decimal.Parse(linea.Element(Cac + "TaxTotal")!.Element(Cbc + "TaxAmount")!.Value, System.Globalization.CultureInfo.InvariantCulture);
+            var suma = linea.Descendants(Cac + "TaxSubtotal")
+                .Where(s => s.Descendants(Cac + "TaxScheme").Single().Element(Cbc + "ID")!.Value is "1000" or "1016" or "2000" or "7152" or "9999")
+                .Sum(s => decimal.Parse(s.Element(Cbc + "TaxAmount")!.Value, System.Globalization.CultureInfo.InvariantCulture));
+            Assert.Equal(suma, total);
+        }
+        // La línea gratuita (11) informa su IGV de 3.60 en el subtotal 9996 (regla 3111), pero el total de la línea es 0.00.
+        var gratuita = Raiz.Elements(Cac + "InvoiceLine").Last();
+        Assert.Equal("0.00", gratuita.Element(Cac + "TaxTotal")!.Element(Cbc + "TaxAmount")!.Value);
+        Assert.Equal("3.60", gratuita.Descendants(Cac + "TaxSubtotal").Single().Element(Cbc + "TaxAmount")!.Value);
+    }
+
+    [Fact]
+    public void Todo_subtotal_de_linea_lleva_Percent_salvo_ICBPER_y_ISC_de_monto_fijo()
+    {
+        foreach (var sub in Raiz.Elements(Cac + "InvoiceLine").SelectMany(l => l.Descendants(Cac + "TaxSubtotal")))
+        {
+            var codigo = sub.Descendants(Cac + "TaxScheme").Single().Element(Cbc + "ID")!.Value;
+            var porcentaje = sub.Element(Cac + "TaxCategory")!.Element(Cbc + "Percent");
+            if (codigo == "7152") Assert.Null(porcentaje);
+            else Assert.NotNull(porcentaje);
+        }
+        // exonerado e inafecto: 0.00; gravado: 18.00
+        Assert.Equal("0.00", Linea(3).Descendants(Cbc + "Percent").Single().Value);
+        Assert.Equal("0.00", Linea(4).Descendants(Cbc + "Percent").Single().Value);
     }
 
     [Fact]

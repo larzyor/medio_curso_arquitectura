@@ -53,13 +53,14 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
             UBLExtensions = new UBLExtensionsType { UBLExtension = { new UBLExtensionType { ExtensionContent = new ExtensionContentType() } } }, // aquí irá la firma
             UBLVersionID = new UBLVersionIDType { Value = "2.1" },
             CustomizationID = new CustomizationIDType { Value = "2.0" },
-            ProfileID = new ProfileIDType
-            { Value = c.TipoOperacion.Codigo(), SchemeName = "SUNAT:Identificador de Tipo de Operación", SchemeAgencyName = UblNs.Agency, SchemeURI = UblNs.Catalogo("17") }, // URI tal como la muestra la guía (los códigos son del Catálogo 51)
             ID = new IDType { Value = c.SerieNumero },
             IssueDate = new IssueDateType { Value = c.FechaEmision.ToString("yyyy-MM-dd", Inv) },
             IssueTime = new IssueTimeType { Value = c.FechaEmision.ToString("HH:mm:ss", Inv) },
             InvoiceTypeCode = new InvoiceTypeCodeType
-            { Value = c.TipoComprobante.Codigo(), ListAgencyName = UblNs.Agency, ListName = "SUNAT:Identificador de Tipo de Documento", ListURI = UblNs.Catalogo("01") },
+            {   // El tipo de operación (Catálogo 51) viaja en @listID: así lo exigen las reglas de validación vigentes de SUNAT (error 3205 si falta)
+                Value = c.TipoComprobante.Codigo(), ListID = c.TipoOperacion.Codigo(), ListAgencyName = UblNs.Agency, Name = "Tipo de Operacion",
+                ListName = "Tipo de Documento", ListURI = UblNs.Catalogo("01"), ListSchemeURI = UblNs.Catalogo("51")
+            },
             DocumentCurrencyCode = new DocumentCurrencyCodeType { Value = mon, ListID = "ISO 4217 Alpha", ListName = "Currency", ListAgencyName = Unece },
             LineCountNumeric = new LineCountNumericType { Value = c.Lineas.Count },   // cantidad de ítems (opcional en la guía; aparece en todos sus ejemplos)
             AccountingSupplierParty = new SupplierPartyType { Party = ParteEmisor(c.Emisor) },
@@ -71,6 +72,9 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
                 PayableAmount = new PayableAmountType { Value = Dos(c.ImporteTotalPagar), CurrencyID = mon }
             }
         };
+
+        // Forma de pago: obligatoria para SUNAT (error 3244). Este sistema emite al contado.
+        f.PaymentTerms.Add(new PaymentTermsType { ID = new IDType { Value = "FormaPago" }, PaymentMeansID = { new PaymentMeansIDType { Value = "Contado" } } });
 
         f.Note.Add(new NoteType { Value = MontoEnLetras.Convertir(c.ImporteTotalPagar, c.Moneda), LanguageLocaleID = Leyenda.MontoEnLetras });
         if (c.Lineas.All(l => l.AfectacionIgv.EsGratuita()))
@@ -96,7 +100,7 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
             {
                 TaxableAmount = t.BaseImponible is null ? null : new TaxableAmountType { Value = Dos(t.BaseImponible.Value), CurrencyID = mon },
                 TaxAmount = new TaxAmountType { Value = Dos(t.Monto), CurrencyID = mon },
-                TaxCategory = Categoria(t.Tributo, cabecera: true)
+                TaxCategory = Categoria(t.Tributo)
             });
         f.TaxTotal.Add(total);
 
@@ -107,37 +111,30 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
     /// <summary>Los importes se escriben siempre con al menos 2 decimales (180.00, no 180).</summary>
     private static decimal Dos(decimal v) => v + 0.00m;
 
+    // Estructura vigente de SUNAT: PartyIdentification (documento) + PartyLegalEntity (razón social y, en el emisor, el establecimiento).
     private static PartyType ParteEmisor(Emisor e) => new()
     {
+        PartyIdentification = { new PartyIdentificationType { ID = Documento(TipoDocumentoIdentidad.RUC, e.Ruc.Value) } },
         PartyName = { new PartyNameType { Name = new NameType { Value = e.NombreComercial ?? e.RazonSocial } } },
-        PartyTaxScheme =
+        PartyLegalEntity =
         {
-            new PartyTaxSchemeType
+            new PartyLegalEntityType
             {
                 RegistrationName = new RegistrationNameType { Value = e.RazonSocial },
-                CompanyID = Documento(TipoDocumentoIdentidad.RUC, e.Ruc.Value),
                 RegistrationAddress = new AddressType
-                { AddressTypeCode = new AddressTypeCodeType { Value = e.CodigoEstablecimiento } },   // sin atributos, como en la guía
-                TaxScheme = new TaxSchemeType { ID = new IDType { Value = "-" } }
+                { AddressTypeCode = new AddressTypeCodeType { Value = e.CodigoEstablecimiento, ListAgencyName = UblNs.Agency, ListName = "Establecimientos anexos" } }
             }
         }
     };
 
     private static PartyType ParteCliente(Cliente c) => new()
     {
-        PartyTaxScheme =
-        {
-            new PartyTaxSchemeType
-            {
-                RegistrationName = new RegistrationNameType { Value = c.RazonSocial },
-                CompanyID = Documento(c.TipoDocumento, c.NumeroDocumento),
-                TaxScheme = new TaxSchemeType { ID = new IDType { Value = "-" } }
-            }
-        }
+        PartyIdentification = { new PartyIdentificationType { ID = Documento(c.TipoDocumento, c.NumeroDocumento) } },
+        PartyLegalEntity = { new PartyLegalEntityType { RegistrationName = new RegistrationNameType { Value = c.RazonSocial } } }
     };
 
-    private static CompanyIDType Documento(TipoDocumentoIdentidad tipo, string numero) => new()
-    { Value = numero, SchemeID = tipo.Codigo(), SchemeName = "SUNAT:Identificador de Documento de Identidad", SchemeAgencyName = UblNs.Agency, SchemeURI = UblNs.Catalogo("06") };
+    private static IDType Documento(TipoDocumentoIdentidad tipo, string numero) => new()
+    { Value = numero, SchemeID = tipo.Codigo(), SchemeName = "Documento de Identidad", SchemeAgencyName = UblNs.Agency, SchemeURI = UblNs.Catalogo("06") };
 
     private static InvoiceLineType MapearLinea(LineaComprobante l, string mon)
     {
@@ -147,7 +144,7 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
             ID = new IDType { Value = l.NumeroLinea.ToString(Inv) },
             InvoicedQuantity = new InvoicedQuantityType
             { Value = l.Cantidad, UnitCode = l.UnidadMedida.ToString(), UnitCodeListID = "UN/ECE rec 20", UnitCodeListAgencyName = Unece },
-            LineExtensionAmount = new LineExtensionAmountType { Value = Dos(l.ValorVenta), CurrencyID = mon },
+            LineExtensionAmount = new LineExtensionAmountType { Value = Dos(gratuita ? l.ValorReferencialTotal : l.ValorVenta), CurrencyID = mon }, // gratuita: SUNAT compara con el valor referencial (error 3271)
             Item = new ItemType
             {
                 Description = { new DescriptionType { Value = l.Descripcion } },
@@ -167,7 +164,7 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
                     PriceTypeCode = new PriceTypeCodeType
                     {
                         Value = (gratuita ? TipoPrecio.ValorReferencialOperacionNoOnerosa : TipoPrecio.PrecioUnitarioIncluyeIgv).Codigo(),
-                        ListName = "SUNAT:Indicador de Tipo de Precio", ListAgencyName = UblNs.Agency, ListURI = UblNs.Catalogo("16")
+                        ListName = "Tipo de Precio", ListAgencyName = UblNs.Agency, ListURI = UblNs.Catalogo("16")
                     }
                 }
             }
@@ -208,7 +205,13 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
             });
         }
 
-        impuestos.TaxAmount = new TaxAmountType { Value = Dos(impuestos.TaxSubtotal.Sum(s => s.TaxAmount.Value)), CurrencyID = mon };
+        // El IGV de una línea gratuita (tributo 9996) es informativo: no se cobra, así que no entra en el total de impuestos
+        // de la línea (regla 3292 de SUNAT: TaxTotal/TaxAmount = suma de IGV, ISC, ICBPER, IVAP y otros de esa línea).
+        impuestos.TaxAmount = new TaxAmountType
+        {
+            Value = Dos(impuestos.TaxSubtotal.Where(s => s.TaxCategory!.TaxScheme!.ID!.Value != TributoSunat.Gratuito.Codigo).Sum(s => s.TaxAmount.Value)),
+            CurrencyID = mon
+        };
         linea.TaxTotal.Add(impuestos);
         return linea;
     }
@@ -217,24 +220,22 @@ public sealed class GeneradorXmlUblFactura21 : IGeneradorXmlUbl
     {
         TaxableAmount = new TaxableAmountType { Value = Dos(@base), CurrencyID = mon },
         TaxAmount = new TaxAmountType { Value = Dos(monto), CurrencyID = mon },
-        TaxCategory = Categoria(t, porcentaje, afectacion, tier)
+        // SUNAT exige cbc:Percent en todo subtotal de línea salvo ICBPER (error 2992); el ISC de monto fijo no usa porcentaje
+        TaxCategory = Categoria(t, porcentaje ?? (t.Codigo == TributoSunat.Isc.Codigo ? (decimal?)null : 0m), afectacion, tier)
     };
 
-    private static TaxCategoryType Categoria(TributoSunat t, decimal? porcentaje = null, AfectacionIgv? afectacion = null, string? tier = null, PerUnitAmountType? perUnit = null, bool cabecera = false) => new()
+    private static TaxCategoryType Categoria(TributoSunat t, decimal? porcentaje = null, AfectacionIgv? afectacion = null, string? tier = null, PerUnitAmountType? perUnit = null) => new()
     {
         ID = new IDType { Value = t.CategoriaUbl, SchemeID = "UN/ECE 5305", SchemeName = "Tax Category Identifier", SchemeAgencyName = Unece },
         Percent = porcentaje is null ? null : new PercentType { Value = Dos(porcentaje.Value) },
         PerUnitAmount = perUnit,
         TaxExemptionReasonCode = afectacion is null ? null : new TaxExemptionReasonCodeType
-        { Value = afectacion.Value.Codigo(), ListAgencyName = UblNs.Agency, ListName = "SUNAT:Codigo de Tipo de Afectación del IGV", ListURI = UblNs.Catalogo("07") },
+        { Value = afectacion.Value.Codigo(), ListAgencyName = UblNs.Agency, ListName = "Afectacion del IGV", ListURI = UblNs.Catalogo("07") },
         // cbc:TierRange es de tipo texto en UBL 2.1: no admite atributos de catálogo (el XSD los rechaza)
         TierRange = tier is null ? null : new TierRangeType { Value = tier },
         TaxScheme = new TaxSchemeType
         {
-            // La guía usa atributos distintos en el TaxScheme/ID de la cabecera y en el de cada línea
-            ID = cabecera
-                ? new IDType { Value = t.Codigo, SchemeID = "UN/ECE 5153", SchemeAgencyID = "6" }
-                : new IDType { Value = t.Codigo, SchemeID = "UN/ECE 5153", SchemeName = "Tax Scheme Identifier", SchemeAgencyName = Unece },
+            ID = new IDType { Value = t.Codigo, SchemeName = "Codigo de tributos", SchemeAgencyName = UblNs.Agency, SchemeURI = UblNs.Catalogo("05") },
             Name = new NameType { Value = t.Nombre },
             TaxTypeCode = new TaxTypeCodeType { Value = t.CodigoInternacional }
         }

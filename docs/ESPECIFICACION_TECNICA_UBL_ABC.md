@@ -79,7 +79,7 @@ Esta especificación distingue lo que **ya existe en el código** de este reposi
 - [x] Cálculo tributario: ISC → IGV, ICBPER, exonerado, inafecto, exportación y operaciones gratuitas
 - [x] Clases UBL **generadas desde `UBL-Invoice-2.1.xsd`** (614 clases, herramienta propia en `tools/`)
 - [x] Emisión: serie y correlativo atómicos, XML UBL 2.1, firma XMLDSig, validación contra el XSD oficial
-- [x] **Pruebas unitarias xUnit de generación** (173 pruebas en `tests/ABC.Billing.Tests`, 71 de ellas de generación del XML)
+- [x] **Pruebas unitarias xUnit de generación** (176 pruebas en `tests/ABC.Billing.Tests`, 72 de ellas de generación del XML)
 - [x] Proyecto en **C# (.NET 8)**, con el dominio expresado en términos de negocio (`Comprobante`, `LineaComprobante`, `SubtotalTributo`, `Cliente`, `Emisor`...) y aislado del XML
 - [x] Transmisión `sendBill` (cliente SOAP), lectura del CDR, estados y contingencia
 - [x] Migración del sistema legado al kardex con auditoría
@@ -151,14 +151,14 @@ SistemaIsc.AlValor             // 1  ("01") -> Catálogo 08
 | 02 | Moneda (ISO 4217) | `cbc:DocumentCurrencyCode` | `TipoMoneda` |
 | 03 | Unidad de medida (UN/ECE Rec. 20) | `cbc:InvoicedQuantity/@unitCode` | `UnidadMedida` |
 | **05** | **Tipos de tributo** | `cac:TaxScheme/cbc:ID`, `Name`, `TaxTypeCode` | `TributoSunat` |
-| 06 | Tipo de documento de identidad | `cbc:CompanyID/@schemeID` | `TipoDocumentoIdentidad` |
+| 06 | Tipo de documento de identidad | `cac:PartyIdentification/cbc:ID/@schemeID` | `TipoDocumentoIdentidad` |
 | 07 | Afectación al IGV | `cbc:TaxExemptionReasonCode` | `AfectacionIgv` |
 | **08** | **Sistema de cálculo del ISC** | `cbc:TierRange` | `SistemaIsc` |
 | 09 y 10 | Motivo de nota de crédito (**13 códigos**, 01 a 13) y de débito (3 códigos) | `cbc:ResponseCode` | `TipoNotaCredito`, `TipoNotaDebito` |
 | 14 | Otros conceptos tributarios: totales por tipo de operación 1001 gravadas, 1002 inafectas, 1003 exoneradas, 1004 gratuitas, 3001 FISE (esquema UBL 2.0) | No se escribe en UBL 2.1 (ver 3.6) | `CodigoTotalOperacion`, `TotalesPorTipoOperacion` |
 | 16 | Tipo de precio de venta unitario | `cbc:PriceTypeCode` | `TipoPrecio` |
 | 25 | Código de producto SUNAT (UNSPSC) | `cac:CommodityClassification` | pendiente |
-| 51 | Tipo de operación de la factura | `cbc:ProfileID` | `TipoOperacion` |
+| 51 | Tipo de operación de la factura | `cbc:InvoiceTypeCode/@listID` | `TipoOperacion` |
 | 52 | Leyendas | `cbc:Note/@languageLocaleID` | `Leyenda` |
 
 ### 3.3 Catálogo 05: tipos de tributo
@@ -171,11 +171,11 @@ Los nombres (`cbc:Name`) son los de la guía de SUNAT; la RS 150-2019 los abrevi
 | 1016 | IVAP | VAT | S | Arroz pilado (no soportado en esta fase) |
 | 2000 | ISC | EXC | S | Impuesto Selectivo al Consumo |
 | **7152** | **ICBPER** | OTH | S | Impuesto al consumo de las bolsas de plástico (RS 150-2019) |
-| 9995 | EXPORTACIÓN | FRE | G | Exportación |
-| **9996** | GRATUITO | FRE | Z | Operaciones gratuitas |
-| **9997** | EXONERADO | VAT | E | Exonerado (**oneroso**; las transferencias gratuitas van en 9996) |
-| 9998 | INAFECTO | FRE | O | Inafecto |
-| 9999 | OTROS CONCEPTOS DE PAGO | OTH | S | Otros conceptos de pago |
+| 9995 | EXP | FRE | G | Exportación |
+| **9996** | GRA | FRE | Z | Operaciones gratuitas |
+| **9997** | EXO | VAT | E | Exonerado (**oneroso**; las transferencias gratuitas van en 9996) |
+| 9998 | INA | FRE | O | Inafecto |
+| 9999 | OTROS | OTH | S | Otros conceptos de pago |
 
 ### 3.4 Catálogo 07: afectación al IGV
 
@@ -457,7 +457,7 @@ La leyenda 1000 resulta: `SON: TRESCIENTOS VEINTIUNO Y 19/100 SOLES`.
 ### 7.3 Supuestos y límites
 
 - La base imponible del formato 14.1 no incluye el ISC (nota 4 del anexo), coherente con que `OperacionesGravadas` excluya el ISC.
-- Las operaciones gratuitas se informan con `LineExtensionAmount = 0.00` y `Price = 0.00`; el valor referencial va en `PricingReference` con tipo de precio 02. Este tratamiento sigue la práctica habitual de los OSE y debe cotejarse con el ejemplo de transferencia gratuita de la guía antes de producción.
+- Las operaciones gratuitas se informan con `Price = 0.00`; el valor referencial va en `PricingReference` con tipo de precio 02, y el `LineExtensionAmount` **de la línea** es ese valor referencial, porque la regla 3271 de SUNAT lo compara con él. Esa línea no entra en el total de la venta (`LegalMonetaryTotal`). Se verificó con las reglas de validación de SUNAT (sección 11.7).
 - No se modelan descuentos, cargos ni anticipos (`cac:AllowanceCharge`, `cac:PrepaidPayment`): quedan como trabajo futuro.
 
 ## 8. Arquitectura: MVC hoy, Hexagonal mañana
@@ -742,12 +742,13 @@ Orden de los elementos del `Comprobante` (sigue la secuencia del XSD):
 | N.° | Elemento | Contenido |
 |:---|:---|:---|
 | 1 | `ext:UBLExtensions` | Una `UBLExtension` con `ExtensionContent`, donde va `ds:Signature` |
-| 2 a 4 | `cbc:UBLVersionID`, `cbc:CustomizationID`, `cbc:ProfileID` | `2.1`, `2.0`, tipo de operación (Catálogo 51) |
-| 5 a 8 | `cbc:ID`, `IssueDate`, `IssueTime`, `InvoiceTypeCode` | `F001-1`, fecha, hora, `01` |
+| 2 a 3 | `cbc:UBLVersionID`, `cbc:CustomizationID` | `2.1`, `2.0` |
+| 4 a 7 | `cbc:ID`, `IssueDate`, `IssueTime`, `InvoiceTypeCode` | `F001-1`, fecha, hora, `01`; el **tipo de operación** (Catálogo 51, `0101`...) va en `InvoiceTypeCode/@listID` |
 | 9 | `cbc:Note` | Leyenda 1000 (monto en letras); 1002 si todo es gratuito |
 | 10 | `cbc:DocumentCurrencyCode` | `PEN` |
 | 11 | `cac:Signature` | Referencia `#SignABC` a la firma |
-| 12 y 13 | `cac:AccountingSupplierParty`, `cac:AccountingCustomerParty` | Emisor y adquirente |
+| 12 y 13 | `cac:AccountingSupplierParty`, `cac:AccountingCustomerParty` | Emisor y adquirente: `PartyIdentification` (documento) y `PartyLegalEntity` (razón social; en el emisor, también el establecimiento) |
+| 13b | `cac:PaymentTerms` | `FormaPago` = `Contado` (obligatorio para SUNAT) |
 | 14 | `cac:TaxTotal` | **Uno solo**, con un `TaxSubtotal` por tributo |
 | 15 | `cac:LegalMonetaryTotal` | `LineExtensionAmount`, `TaxInclusiveAmount`, `PayableAmount` |
 | 16 | `cac:InvoiceLine` (1..n) | Ítem con su `TaxTotal`, precio y producto |
@@ -767,7 +768,7 @@ Extractos del archivo [`ejemplos/factura-ejemplo-firmada.xml`](ejemplos/factura-
       <cbc:Percent>10.00</cbc:Percent>
       <cbc:TierRange>01</cbc:TierRange>
       <cac:TaxScheme>
-        <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">2000</cbc:ID>
+        <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">2000</cbc:ID>
         <cbc:Name>ISC</cbc:Name>
         <cbc:TaxTypeCode>EXC</cbc:TaxTypeCode>
       </cac:TaxScheme>
@@ -779,9 +780,9 @@ Extractos del archivo [`ejemplos/factura-ejemplo-firmada.xml`](ejemplos/factura-
     <cac:TaxCategory>
       <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
       <cbc:Percent>18.00</cbc:Percent>
-      <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="SUNAT:Codigo de Tipo de Afectación del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
+      <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT" listName="Afectacion del IGV" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
       <cac:TaxScheme>
-        <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">1000</cbc:ID>
+        <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">1000</cbc:ID>
         <cbc:Name>IGV</cbc:Name>
         <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
       </cac:TaxScheme>
@@ -800,7 +801,7 @@ Subtotal del **ICBPER (Catálogo 05, código 7152)**: monto, cantidad de bolsas 
     <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier" schemeAgencyName="United Nations Economic Commission for Europe">S</cbc:ID>
     <cbc:PerUnitAmount currencyID="PEN">0.50</cbc:PerUnitAmount>
     <cac:TaxScheme>
-      <cbc:ID schemeID="UN/ECE 5153" schemeName="Tax Scheme Identifier" schemeAgencyName="United Nations Economic Commission for Europe">7152</cbc:ID>
+      <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">7152</cbc:ID>
       <cbc:Name>ICBPER</cbc:Name>
       <cbc:TaxTypeCode>OTH</cbc:TaxTypeCode>
     </cac:TaxScheme>
@@ -871,28 +872,47 @@ La guía que usó el profesor define, para cada campo de la factura, su ubicaci�
 |:---|:---|:---|
 | Versiones | `UBLVersionID` 2.1, `CustomizationID` 2.0 | Igual |
 | Bloque de firma | `cac:Signature` con `ID`, `SignatoryParty`, `DigitalSignatureAttachment` | Igual |
-| Emisor y cliente | `PartyTaxScheme` con `RegistrationName`, `CompanyID` y `TaxScheme/ID` = `-` | Igual |
+| Emisor y cliente | Guía 2017: `PartyTaxScheme` con `RegistrationName`, `CompanyID` y `TaxScheme/ID` = `-` | **Distinto a propósito**: `PartyIdentification` + `PartyLegalEntity`, que es lo que validan las reglas vigentes de SUNAT (ver 10.8) |
 | Un solo `TaxTotal` de cabecera con varios `TaxSubtotal` | Sí | Igual |
-| Línea gratuita | Valor de venta 0.00, precio 0.00, valor referencial con tipo de precio 02 | Igual |
+| Línea gratuita | Valor de venta 0.00, precio 0.00, valor referencial con tipo de precio 02 | Precio 0.00 y valor referencial con tipo 02; **valor de línea = valor referencial** (regla 3271, ver 10.8) |
 | Exoneradas e inafectas excluyen las gratuitas (numerales 24 y 25) | Sí | Igual |
 | IGV = 18 % de (gravadas + ISC) (numeral 27) | Sí | Igual |
 | Leyenda 1002 solo si todas las líneas son gratuitas (numeral 10) | Sí | Igual |
-| Nombres de tributo | IGV, ISC, EXONERADO, INAFECTO, GRATUITO, OTROS CONCEPTOS DE PAGO | Igual (alineado en esta versión) |
-| Textos de los atributos `listName` y `schemeName` | `SUNAT:Identificador de Tipo de Documento`, `SUNAT:Indicador de Tipo de Precio`... | Igual (alineado en esta versión) |
-| `TaxScheme/ID` | Cabecera: `schemeID` y `schemeAgencyID`; línea: `schemeID`, `schemeName`, `schemeAgencyName` | Igual (alineado en esta versión) |
+| Nombres de tributo | IGV, ISC, EXONERADO, INAFECTO, GRATUITO, OTROS CONCEPTOS DE PAGO | **Distinto a propósito**: los del Catálogo 05 vigente (IGV, ISC, EXP, GRA, EXO, INA, OTROS). nubefact rechaza `EXONERADO` con el error 3051 |
+| Textos de los atributos `listName` y `schemeName` | Guía 2017: `SUNAT:Identificador de Tipo de Documento`, `SUNAT:Indicador de Tipo de Precio`... | **Distinto a propósito**: los de las reglas vigentes (`Tipo de Documento`, `Tipo de Precio`, `Afectacion del IGV`, `Codigo de tributos`; ver 10.8) |
+| `TaxScheme/ID` | Cabecera: `schemeID` y `schemeAgencyID`; línea: `schemeID`, `schemeName`, `schemeAgencyName` | Cabecera y línea: `schemeName`, `schemeAgencyName`, `schemeURI` (Catálogo 05), como validan las reglas vigentes |
 | `cbc:LineCountNumeric` | Opcional; aparece en los tres ejemplos | Se genera |
 
 **Diferencias deliberadas**
 
 | Tema | Qué pasa | Decisión |
 |:---|:---|:---|
-| Tributo de las gratuitas | El texto (numerales 24 a 26) manda informarlas con **9996 GRATUITO**; los XML de los ejemplos B y C las muestran bajo 9998 INAFECTO | Se sigue el texto. La prueba `Ejemplo_C_las_gratuitas_se_informan_como_9996...` lo documenta |
-| URI del tipo de operación | Texto: Catálogo 51; XML del ejemplo: `catalogo17` | Se usa la URI del ejemplo; los códigos (`0101`...) son del Catálogo 51 |
+| Tributo de las gratuitas | El texto (numerales 24 a 26) manda informarlas con **9996 GRATUITO**; los XML de los ejemplos B y C las muestran bajo 9998 INA | Se sigue el texto. La prueba `Ejemplo_C_las_gratuitas_se_informan_como_9996...` lo documenta |
+| Tipo de operación | Guía 2017: `cbc:ProfileID` (URI `catalogo17`) | Va en `InvoiceTypeCode/@listID` con `listSchemeURI` del Catálogo 51; no se escribe `ProfileID` |
 | Elementos con errores en los ejemplos | `CompanyID` sin prefijo `cbc:` y dos `TaxAmount` seguidos en la cabecera, que el XSD rechaza | **Manda el XSD**: el taller pide generar a partir de él |
 | RUC de los ejemplos | No pasan el Módulo 11 | Las pruebas usan RUC ficticios válidos |
 | Prefijo de la firma | La guía usa `ds:Signature`; .NET emite `Signature` con el espacio de nombres por defecto | Equivalente en XML. Cambiar el prefijo después de firmar invalidaría la firma |
 | No se generan | Descuentos y cargos (`cac:AllowanceCharge`, `AllowanceTotalAmount`, `ChargeTotalAmount`), percepción, guía de remisión relacionada, código UNSPSC (opcional), leyenda 3000 (código interno) | Fuera del alcance; están en el contrato como pendientes |
 | Ejemplos A y B | Usan descuentos, bonificación con ISC y el sistema de ISC 03 | No se reproducen por completo. El ejemplo C sí, con 9 pruebas (`EjemplosDeLaGuiaTests`) |
+
+### 10.8 Estructura vigente de SUNAT: qué se cambió y por qué (Taller 2)
+
+La guía de mayo 2017 que mostró el profesor describe una estructura anterior. Al ejecutar sobre el XML generado las **reglas de validación oficiales** (`ValidaExprRegFactura-2.0.1.xsl` y `ValidaExprRegBoleta-2.0.1.xsl`, actualizadas al 06/09/2022; ver 11.7), la estructura de la guía producía **errores reales**. Se corrigió el generador hasta que el XML de la factura y de la boleta de ejemplo pasa sin errores ni observaciones:
+
+| Regla de SUNAT | Qué exige | Cambio en el generador |
+|:---|:---|:---|
+| 3205 | El tipo de operación se lee de `InvoiceTypeCode/@listID` | Se escribe ahí; se eliminó `cbc:ProfileID` |
+| 1008, 2015 | Documento del emisor y del cliente en `PartyIdentification/cbc:ID` con `@schemeID` | Ya no se usa `PartyTaxScheme/CompanyID` |
+| 1037, 2021 | Razón social en `PartyLegalEntity/cbc:RegistrationName` | Se movió desde `PartyTaxScheme` |
+| 3030 | Código de establecimiento en `PartyLegalEntity/RegistrationAddress/AddressTypeCode` | Se movió y lleva `listAgencyName` y `listName` |
+| 3244 | `cac:PaymentTerms` con `FormaPago` | Se agrega `FormaPago` = `Contado` |
+| 2992 | `cbc:Percent` en todo subtotal de línea salvo ICBPER | Exonerado, inafecto, exportación y gratuitos no gravados llevan `0.00`; el ISC de monto fijo no lleva (la regla 3104 exige porcentaje mayor que 0 en ISC) |
+| 3292 (nubefact) | `TaxTotal/TaxAmount` de la línea = suma de los subtotales 1000, 1016, 2000, 7152 y 9999 de esa línea | El IGV informativo de la línea gratuita (9996, 3.60) queda en su subtotal, pero el total de la línea vale `0.00` |
+| 3051 (nubefact) | `TaxScheme/Name` debe ser el del Catálogo 05 (`EXO`, `INA`, `GRA`...) | Ver 3.3; antes se escribía `EXONERADO` |
+| 3271, 3276 | En una línea gratuita, `LineExtensionAmount` = valor referencial; el total 9996 de la cabecera es la suma de esos valores | La línea gratuita informa su valor referencial; no entra en `LegalMonetaryTotal` |
+| 4252 a 4256 | Textos de `listName`, `schemeName` y `schemeAgencyName` | `Tipo de Documento`, `Tipo de Precio`, `Afectacion del IGV`, `Codigo de tributos`, `PE:SUNAT` |
+
+**Limitación conocida (ISC):** la regla 3277 compara la base del IGV de la cabecera con la suma de los valores de venta de las líneas **sin** el ISC, pero la ley y la regla 3272 exigen que la base del IGV **incluya** el ISC. Una factura con ISC no puede cumplir las dos a la vez. El sistema calcula conforme a la ley; por eso el ejemplo principal no lleva ISC y el ISC va en `docs/ejemplos/factura-con-isc-ejemplo-firmada.xml`, que puede salir observado en validadores que apliquen la regla 3277 tal cual.
 
 ## 11. Matriz de trazabilidad normativa
 
@@ -904,7 +924,7 @@ La columna "Card. UBL" es la cardinalidad que declara `UBL-Invoice-2.1.xsd`; la 
 |:---|:---|:---|:---|:---|
 | Versión de UBL | `cbc:UBLVersionID` = `2.1` | | 0..1 | Implementado |
 | Versión de la estructura | `cbc:CustomizationID` = `2.0` | | 0..1 | Implementado |
-| Tipo de operación | `cbc:ProfileID` | Catálogo 51 | 0..1 | Implementado |
+| Tipo de operación | `cbc:InvoiceTypeCode/@listID` | Catálogo 51 | 1 | Implementado |
 | Serie y número | `cbc:ID` (`F001-1`) | `[FB][A-Z0-9]{3}-[0-9]{1,8}` | 1 | Implementado |
 | Fecha y hora de emisión | `cbc:IssueDate`, `cbc:IssueTime` | | 1 y 0..1 | Implementado |
 | Tipo de documento | `cbc:InvoiceTypeCode` | Catálogo 01 | 0..1 | Implementado |
@@ -913,11 +933,11 @@ La columna "Card. UBL" es la cardinalidad que declara `UBL-Invoice-2.1.xsd`; la 
 | Moneda | `cbc:DocumentCurrencyCode` | Catálogo 02 | 0..1 | Implementado |
 | Referencia a la firma | `cac:Signature` (`cbc:ID`, `cac:SignatoryParty`, `cac:DigitalSignatureAttachment/cac:ExternalReference/cbc:URI`) | | 0..n | Implementado |
 | Firma digital | `ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent/ds:Signature` | XMLDSig, Manual 3.2 | 0..1 | Implementado |
-| RUC del emisor | `cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID` con `@schemeID="6"` | Catálogo 06; Módulo 11 | parte: 1; dato: 0..1 (SUNAT lo exige) | Implementado |
-| Razón social del emisor | `.../cac:PartyTaxScheme/cbc:RegistrationName` | | 0..1 (SUNAT lo exige) | Implementado |
+| RUC del emisor | `cac:AccountingSupplierParty/cac:Party/cac:PartyIdentification/cbc:ID` con `@schemeID="6"` | Catálogo 06; Módulo 11 | parte: 1; dato: 0..1 (SUNAT lo exige) | Implementado |
+| Razón social del emisor | `.../cac:PartyLegalEntity/cbc:RegistrationName` | | 0..1 (SUNAT lo exige) | Implementado |
 | Nombre comercial | `.../cac:Party/cac:PartyName/cbc:Name` | | 0..n | Implementado |
-| Código de establecimiento | `.../cac:PartyTaxScheme/cac:RegistrationAddress/cbc:AddressTypeCode` | `0000` = domicilio fiscal | 0..1 | Implementado |
-| Adquirente | `cac:AccountingCustomerParty/.../cbc:CompanyID` (`@schemeID`) y `cbc:RegistrationName` | Catálogo 06 | parte: 1; datos: 0..1 (SUNAT los exige) | Implementado |
+| Código de establecimiento | `.../cac:PartyLegalEntity/cac:RegistrationAddress/cbc:AddressTypeCode` | `0000` = domicilio fiscal | 0..1 | Implementado |
+| Adquirente | `cac:AccountingCustomerParty/.../cac:PartyIdentification/cbc:ID` (`@schemeID`) y `PartyLegalEntity/cbc:RegistrationName` | Catálogo 06 | parte: 1; datos: 0..1 (SUNAT los exige) | Implementado |
 | Total de tributos | `cac:TaxTotal/cbc:TaxAmount` | IGV + ISC + ICBPER | 0..n | Implementado |
 | Subtotal por tributo | `cac:TaxTotal/cac:TaxSubtotal` (`TaxableAmount`, `TaxAmount`) | | 0..n | Implementado |
 | Categoría del tributo | `cac:TaxCategory/cbc:ID` | UN/ECE 5305 (S, E, O, Z, G) | 0..1 (SUNAT lo exige) | Implementado |
@@ -937,7 +957,8 @@ La columna "Card. UBL" es la cardinalidad que declara `UBL-Invoice-2.1.xsd`; la 
 | Valor unitario | `cac:Price/cbc:PriceAmount` | | `Price`: 0..1; importe: 1 | Implementado |
 | Código de producto SUNAT | `cac:Item/cac:CommodityClassification/cbc:ItemClassificationCode` | Catálogo 25 (UNSPSC) | 0..n | Pendiente |
 | Documento que se modifica (notas) | `cac:BillingReference` | Catálogos 09 y 10 | 0..n | Pendiente |
-| Forma de pago, detracción | `cac:PaymentTerms`, `cac:PaymentMeans` | | 0..n | Pendiente |
+| Forma de pago (contado) | `cac:PaymentTerms` (`FormaPago` = `Contado`) | | 1 | Implementado |
+| Cuotas, detracción | `cac:PaymentTerms`, `cac:PaymentMeans` | | 0..n | Pendiente |
 | Descuentos y cargos | `cac:AllowanceCharge` | Catálogo 53 | 0..n | Pendiente |
 
 ### 11.2 Verificación cruzada entre datos SUNAT y datos UBL (totales)
@@ -975,7 +996,7 @@ Estructura del Anexo 1 de la RS 361-2015/SUNAT. Cada comprobante aceptado alimen
 | 4 | Fecha de emisión | `FechaEmision` | `cbc:IssueDate` |
 | 6 | Tipo de comprobante (Tabla 10) | `TipoComprobante` | `cbc:InvoiceTypeCode` (Catálogo 01) |
 | 7 y 8 | Serie y número | `Numeracion.Serie`, `Numeracion.Correlativo` | `cbc:ID` |
-| 10 y 11 | Tipo y número de documento de identidad del cliente | `Cliente.TipoDocumento`, `NumeroDocumento` | `cbc:CompanyID` (`@schemeID`, Catálogo 06) |
+| 10 y 11 | Tipo y número de documento de identidad del cliente | `Cliente.TipoDocumento`, `NumeroDocumento` | `cac:PartyIdentification/cbc:ID` (`@schemeID`, Catálogo 06) |
 | 12 | Razón social del cliente | `Cliente.RazonSocial` | `cbc:RegistrationName` |
 | 13 | Valor facturado de la exportación | `TotalExportacion` | `TaxSubtotal(9995)` |
 | 14 | Base imponible de la operación gravada (**sin ISC**, nota 4) | `TotalOperacionesGravadas` | `TaxSubtotal(1000)/TaxableAmount` − ISC |
@@ -1038,7 +1059,21 @@ Cómo se relacionan con este proyecto:
 | 3. Reglas de negocio | Cálculos y coherencias (IGV, totales, boleta de S/ 700) | `CalculadoraTributos`, `EmitirFacturaService` |
 | 4. Validación en línea | Respuesta real de SUNAT (CDR, códigos 0, 2000 a 3999, 4000+) | `ClienteSoapSunat` (sección 9.3) |
 
-**Lo que NO se hace todavía:** no se ejecutan los XSL de SUNAT dentro de las pruebas (son XSLT 1.0 con muchas dependencias del esquema 2.0) y no se verificó el XML contra el validador en línea [probar-xml.nubefact.com](https://probar-xml.nubefact.com). Ese contraste se hace a mano subiendo `docs/ejemplos/*.xml`; el resultado debe anotarse en la sección 13.
+**Resultado de ejecutar las reglas sobre los XML generados** (herramienta en [`tools/verificacion-sunat`](../tools/verificacion-sunat)):
+
+| XML | Antes de corregir (guía 2017) | Después (estructura vigente) |
+|:---|:---|:---|
+| Factura de ejemplo | 14 errores y 30 observaciones | **0 errores y 0 observaciones** (sobre el XML generado por el código) |
+| Boleta de ejemplo | 6 errores y 7 observaciones | **0 errores y 0 observaciones** |
+| Factura con ISC | (no medida) | Con el prototipo: 1 error, regla 3277 (limitación documentada en 10.8). No se midió sobre el XML generado por el C# |
+| XML alterado a propósito (sin moneda, versión 2.0, serie `FF001`, importe con 3 decimales) | | 21 errores: la herramienta sí detecta fallos |
+
+**Alcance y límites de esta verificación (importante):**
+- Las reglas de SUNAT usan plantillas internas de la plataforma IBM DataPower (`validate_utils.xsl`) que **no se publican**. La herramienta las reimplementa: existencia de etiquetas, expresiones regulares, decimales y expresiones de coherencia. Es una aproximación, no el validador oficial.
+- Las reglas que consultan **catálogos** (por ejemplo moneda, unidad de medida, afectación, tipo de operación) **no se evalúan**: se listan como "no verificadas".
+- Tampoco se consulta el padrón de contribuyentes (estado y condición del RUC).
+- **No** se verificó el XML en el validador en línea [probar-xml.nubefact.com](https://probar-xml.nubefact.com): hay que pegar a mano los archivos de `docs/ejemplos` y anotar su respuesta en la sección 13.
+- **Codificación al pegar en nubefact:** el XML va en ISO-8859-1 (Manual del Programador). Al pegarlo en un navegador, las letras con tilde o eñe se convierten en `�`, el contenido cambia y SUNAT/nubefact responde el error 2335 ("el documento electrónico ingresado ha sido alterado... ref[0] validity status: false") aunque la firma sea correcta; se comprobó recalculando el digest con los caracteres restaurados. Por eso los textos de `docs/ejemplos` usan solo ASCII. Al enviar a SUNAT no ocurre: el XML viaja como bytes dentro del ZIP. En nubefact conviene además marcar la casilla **Firmar**, que reemplaza la firma por un certificado de prueba.
 
 ## 12. Distribución y plataformas
 
@@ -1060,6 +1095,11 @@ Todo lo siguiente se ejecutó antes de entregar:
 | `dotnet test` con xUnit real (SDK 8.0.428, Ubuntu en WSL, tras clonar y copiar el proyecto) | **153 pruebas, 0 fallas** |
 | Pruebas agregadas después (ejemplo C de la guía, textos de atributos, `LineCountNumeric`): 166 en total | Verificadas con un ejecutor propio que imita xUnit; confirmar con `dotnet test` |
 | Catálogos 09 (13 códigos), 07 (19) y 14, y totales por tipo de operación: 173 en total | **173 pruebas, 0 fallos, 0 omitidas** (xUnit real, net8.0, Ubuntu en WSL, copia en carpeta aparte) |
+| Estructura vigente de SUNAT (parte 2): `dotnet test` tras mover emisor/cliente a `PartyIdentification`/`PartyLegalEntity`, tipo de operación a `@listID`, forma de pago y porcentajes | **175 pruebas, 0 fallos, 0 omitidas** (en esa fecha; hoy son 176; xUnit real, net8.0, Ubuntu en WSL) |
+| `dotnet test` tras corregir los nombres de tributo (Catálogo 05) y el total de impuestos de la línea gratuita | **176 pruebas, 0 fallos, 0 omitidas** (xUnit real, net8.0, Ubuntu en WSL) |
+| **Validación en probar-xml.nubefact.com (OSE-DEMO), 12/11/2026**: `factura-ejemplo-firmada.xml` (F001-1) y `boleta-ejemplo-firmada.xml` (B001-1) con el RUC emisor de demostración de nubefact y la casilla "Firmar" marcada | **Las dos ACEPTADAS**: `ResponseCode` 0, `StatusReasonCode` 0000, "La Factura Electrónica F001-1 ha sido ACEPTADA" y "La Boleta de Venta Electrónica B001-1 ha sido ACEPTADA". Antes devolvió los errores 3051 (nombre de tributo) y 3292 (total de impuestos de la línea gratuita), ambos corregidos. El RUC ficticio del ejemplo da 2010 (contribuyente no activo) porque no existe en el padrón; es un dato, no un defecto del XML |
+| Reglas de validación de SUNAT (`ValidaExprRegFactura-2.0.1.xsl` y `ValidaExprRegBoleta-2.0.1.xsl`) sobre los XML que genera el código, con `tools/verificacion-sunat` | Factura y boleta: **0 errores, 0 observaciones**; catálogos sin evaluar (ver 11.7) |
+| Los mismos XML contra `UBL-Invoice-2.1.xsd` con `lxml`/libxml2 | **Válidos** |
 | Prueba de mutación: se cambió la tasa del IGV a 19 % | 11 pruebas fallaron; al restaurarla pasaron todas |
 | Validación del XML generado contra `UBL-Invoice-2.1.xsd` con .NET (`XmlSchemaSet`) y, de forma independiente, con `lxml`/libxml2 | Factura y boleta de ejemplo **válidas** en ambos validadores |
 | Firma XMLDSig: verificación y alteración posterior del XML | Válida; **inválida** al modificar el XML |

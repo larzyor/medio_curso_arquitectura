@@ -1,3 +1,5 @@
+// Los textos de los ejemplos usan solo ASCII a propósito: el XML va en ISO-8859-1 y, si se pega en un navegador (probar-xml.nubefact.com),
+// las letras con tilde se corrompen y la firma deja de verificar. Los caracteres especiales de XML (& < > ") se conservan para mostrar el escape.
 // Genera los XML de ejemplo de docs/ejemplos usando el flujo real de emisión (calcula, genera, firma y valida contra el XSD).
 // Uso:  dotnet run --project tools/ABC.Billing.GenerarEjemplos -- docs/ejemplos
 using ABC.Billing.Core.Application.Commands;
@@ -22,22 +24,27 @@ var servicio = new EmitirFacturaService(emisor, new SeriesPorDefecto(), new Calc
     new RepositorioComprobantesEnMemoria(), new Reloj(new DateTime(2026, 11, 3, 10, 15, 0)));
 
 var factura = await servicio.EmitirAsync(new EmitirFacturaCommand(TipoComprobante.Factura, TipoOperacion.VentaInterna, null, TipoMoneda.PEN,
-    new ClienteCommand(TipoDocumentoIdentidad.RUC, rucCliente, "BODEGA \"EL ÑANDÚ\" & HIJOS S.A.C. <prueba>", "Av. Alameda Perú 123, Tingo María"),
+    new ClienteCommand(TipoDocumentoIdentidad.RUC, rucCliente, "BODEGA \"EL NANDU\" & HIJOS S.A.C. <prueba>", "Av. Alameda Perú 123, Tingo María"),
     [
         new ItemCommand("ARR-5KG", "Arroz extra 5 kg", UnidadMedida.NIU, 10m, 18.00m, AfectacionIgv.GravadoOperacionOnerosa),
-        new ItemCommand("CER-620", "Cerveza 620 ml (ISC al valor, tasa de prueba 10 %)", UnidadMedida.NIU, 6m, 5.00m, AfectacionIgv.GravadoOperacionOnerosa, SistemaIsc.AlValor, TasaIsc: 10m),
         new ItemCommand("QUI-1KG", "Quinua exonerada (ejemplo) 1 kg", UnidadMedida.KGM, 5m, 12.00m, AfectacionIgv.ExoneradoOperacionOnerosa),
         new ItemCommand("SAL-1KG", "Sal de mesa inafecta (ejemplo)", UnidadMedida.NIU, 2m, 4.00m, AfectacionIgv.InafectoOperacionOnerosa),
-        new ItemCommand("BOL-PLA", "Bolsa de plástico", UnidadMedida.NIU, 3m, 0.10m, AfectacionIgv.GravadoOperacionOnerosa, AplicaIcbper: true),
+        new ItemCommand("BOL-PLA", "Bolsa de plastico", UnidadMedida.NIU, 3m, 0.10m, AfectacionIgv.GravadoOperacionOnerosa, AplicaIcbper: true),
         new ItemCommand("MUE-001", "Muestra gratuita (retiro por premio)", UnidadMedida.NIU, 1m, 20.00m, AfectacionIgv.GravadoRetiroPorPremio)
     ]));
+// Aparte: factura con ISC. Las reglas de validación de SUNAT (XSL 2.0.1, error 3277) comparan la base del IGV de la cabecera con la suma de los
+// valores de venta de las líneas y no suman el ISC, así que un comprobante con ISC puede salir observado en validadores que las apliquen tal cual.
+var facturaIsc = await servicio.EmitirAsync(new EmitirFacturaCommand(TipoComprobante.Factura, TipoOperacion.VentaInterna, null, TipoMoneda.PEN,
+    new ClienteCommand(TipoDocumentoIdentidad.RUC, rucCliente, "BODEGA \"EL NANDU\" & HIJOS S.A.C. <prueba>", "Av. Alameda Perú 123, Tingo María"),
+    [new ItemCommand("CER-620", "Cerveza 620 ml (ISC al valor, tasa de prueba 10 %)", UnidadMedida.NIU, 6m, 5.00m, AfectacionIgv.GravadoOperacionOnerosa, SistemaIsc.AlValor, TasaIsc: 10m)]));
 var boleta = await servicio.EmitirAsync(new EmitirFacturaCommand(TipoComprobante.BoletaDeVenta, TipoOperacion.VentaInterna, null, TipoMoneda.PEN,
     new ClienteCommand(TipoDocumentoIdentidad.DNI, "45678912", "JUAN PEREZ RAMOS", null),
     [new ItemCommand("ARR-5KG", "Arroz extra 5 kg", UnidadMedida.NIU, 2m, 18.00m, AfectacionIgv.GravadoOperacionOnerosa)]));
 
 File.WriteAllBytes(Path.Combine(salida, "factura-ejemplo-firmada.xml"), factura.XmlFirmado!);
+File.WriteAllBytes(Path.Combine(salida, "factura-con-isc-ejemplo-firmada.xml"), facturaIsc.XmlFirmado!);
 File.WriteAllBytes(Path.Combine(salida, "boleta-ejemplo-firmada.xml"), boleta.XmlFirmado!);
 File.WriteAllBytes(Path.Combine(salida, "envio-ejemplo.zip"), ClienteSoapSunat.CrearZip(factura.NombreArchivo, factura.XmlFirmado!));
-Console.WriteLine($"{factura.SerieNumero}: total {factura.ImporteTotalPagar}; {boleta.SerieNumero}: total {boleta.ImporteTotalPagar}. Escritos en {salida}");
+Console.WriteLine($"{factura.SerieNumero}: total {factura.ImporteTotalPagar}; {facturaIsc.SerieNumero} (con ISC): total {facturaIsc.ImporteTotalPagar}; {boleta.SerieNumero}: total {boleta.ImporteTotalPagar}. Escritos en {salida}");
 
 sealed class Reloj(DateTime fecha) : IReloj { public DateTime AhoraPeru() => fecha; }

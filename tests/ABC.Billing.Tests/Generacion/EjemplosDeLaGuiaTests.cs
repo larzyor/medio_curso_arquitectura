@@ -64,7 +64,7 @@ public class EjemplosDeLaGuiaTests
         Assert.Equal("Tu Soporte", emisor.Descendants(Cac + "PartyName").Single().Element(Cbc + "Name")!.Value);
         Assert.Equal("Soporte Tecnológicos EIRL", emisor.Descendants(Cbc + "RegistrationName").Single().Value);
         Assert.Equal("0001", emisor.Descendants(Cbc + "AddressTypeCode").Single().Value);
-        Assert.Equal("-", emisor.Descendants(Cac + "TaxScheme").Single().Element(Cbc + "ID")!.Value);
+        Assert.Equal(Fabrica.RucEmisor, emisor.Descendants(Cac + "PartyIdentification").Single().Element(Cbc + "ID")!.Value);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class EjemplosDeLaGuiaTests
     {
         var cliente = Raiz.Element(Cac + "AccountingCustomerParty")!;
         Assert.Equal("Boticas y Bazares S. A.", cliente.Descendants(Cbc + "RegistrationName").Single().Value);
-        Assert.Equal("6", cliente.Descendants(Cbc + "CompanyID").Single().Attribute("schemeID")!.Value);
+        Assert.Equal("6", cliente.Descendants(Cac + "PartyIdentification").Single().Element(Cbc + "ID")!.Attribute("schemeID")!.Value);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public class EjemplosDeLaGuiaTests
         var linea = Raiz.Element(Cac + "InvoiceLine")!;
         Assert.Equal("1", linea.Element(Cbc + "InvoicedQuantity")!.Value);
         Assert.Equal("NIU", linea.Element(Cbc + "InvoicedQuantity")!.Attribute("unitCode")!.Value);
-        Assert.Equal("0.00", linea.Element(Cbc + "LineExtensionAmount")!.Value);                        // valor de venta por ítem
+        Assert.Equal("1250.00", linea.Element(Cbc + "LineExtensionAmount")!.Value);                     // gratuita: SUNAT lo compara con el valor referencial (error 3271)
         var referencia = linea.Element(Cac + "PricingReference")!.Element(Cac + "AlternativeConditionPrice")!;
         Assert.Equal("1250.00", referencia.Element(Cbc + "PriceAmount")!.Value);                         // valor referencial unitario
         Assert.Equal("02", referencia.Element(Cbc + "PriceTypeCode")!.Value);                            // Catálogo 16
@@ -119,7 +119,7 @@ public class EjemplosDeLaGuiaTests
     {
         var esquema = Raiz.Element(Cac + "TaxTotal")!.Descendants(Cac + "TaxScheme").Single();
         Assert.Equal("9996", esquema.Element(Cbc + "ID")!.Value);
-        Assert.Equal("GRATUITO", esquema.Element(Cbc + "Name")!.Value);
+        Assert.Equal("GRA", esquema.Element(Cbc + "Name")!.Value);
         Assert.Equal("FRE", esquema.Element(Cbc + "TaxTypeCode")!.Value);
         Assert.Equal("Z", Raiz.Element(Cac + "TaxTotal")!.Descendants(Cac + "TaxCategory").Single().Element(Cbc + "ID")!.Value);
         Assert.Equal(0m, Ejemplo.TotalOperacionesInafectas);   // no se suma a inafectas (numeral 25)

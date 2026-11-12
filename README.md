@@ -32,7 +32,7 @@ Requisitos: **.NET SDK 8** (o uno más nuevo) e Internet la primera vez, porque 
 ```bash
 git clone <url-del-repositorio>
 cd <carpeta>
-dotnet test        # 173 pruebas unitarias xUnit
+dotnet test        # 176 pruebas unitarias xUnit
 ```
 
 ## Si algo falla
