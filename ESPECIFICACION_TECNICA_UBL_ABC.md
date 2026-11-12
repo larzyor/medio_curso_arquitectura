@@ -26,16 +26,19 @@ ABC Software Corp comercializa abarrotes y mercadería al por mayor y menor. Su 
 
 Esta especificación distingue lo que **ya existe en el código** de este repositorio de lo que solo está **especificado** (contrato definido, implementación pendiente).
 
-- [x] Dominio: catálogos 01, 02, 03, 05, 06, 07, 08, 09, 10, 16, 51 y 52, `RucNumber` (Módulo 11), `DocumentSeries`, `NombreArchivoSunat`
+- [x] Dominio: catálogos 01, 02, 03, 05, 06, 07, 08, 09, 10, 16, 51 y 52, `Ruc` (Módulo 11), `SerieComprobante`, `NombreArchivoSunat`
 - [x] Cálculo tributario: ISC → IGV, ICBPER, exonerado, inafecto, exportación y operaciones gratuitas
-- [x] Emisión: serie y correlativo atómicos, XML UBL 2.1 con clases, firma XMLDSig, validación contra el XSD oficial
+- [x] Clases UBL **generadas desde `UBL-Invoice-2.1.xsd`** (614 clases, herramienta propia en `tools/`)
+- [x] Emisión: serie y correlativo atómicos, XML UBL 2.1, firma XMLDSig, validación contra el XSD oficial
+- [x] **Pruebas unitarias xUnit de generación** (153 pruebas en `tests/ABC.Billing.Tests`)
+- [x] Dominio expresado en español: `Comprobante`, `LineaComprobante`, `SubtotalTributo`, `Cliente`, `Emisor`...
 - [x] Transmisión `sendBill` (cliente SOAP), lectura del CDR, estados y contingencia
 - [x] Migración del sistema legado al kardex con auditoría
 - [x] API: `POST/GET /invoices`, `/xml`, `/transmit`, `/cdr` y `POST /migration/legacy-stock`, con autenticación Bearer y errores `application/problem+json`
 - [x] Contrato OpenAPI 3.0.3 completo y validado ([`openapi.yaml`](openapi.yaml))
 - [ ] Notas de crédito y débito (`cac:BillingReference`), comunicación de baja (RA) y resumen diario de boletas (RC): **contrato definido, código pendiente**
 - [ ] Sistema de ISC 03 (precio de venta al público) e IVAP: requieren el Apéndice IV del T.U.O. del IGV e ISC; el código los rechaza con un error explícito
-- [ ] Adaptador SQL (`SqlInvoiceRepository`): esquema propuesto en [`sql/001_schema.sql`](sql/001_schema.sql); hoy se usa un repositorio en memoria
+- [ ] Adaptador SQL (`RepositorioComprobantesSql`): esquema propuesto en [`sql/001_schema.sql`](sql/001_schema.sql); hoy se usa un repositorio en memoria
 - [ ] Aplicación cliente MAUI (Windows y Android) y empaquetado MSI/APK: especificados en la sección 12, no compilados
 - [ ] Pruebas contra el servicio beta de SUNAT: el cliente SOAP se escribió según el manual y se probó con un CDR de ejemplo, no contra el servicio real
 
@@ -44,8 +47,8 @@ Esta especificación distingue lo que **ya existe en el código** de este reposi
 | Observación del profesor | Corrección | Dónde |
 |:---|:---|:---|
 | Se usó "Catálogo 08" para los códigos de tributo (1000, 2000, 7152, 9997...) | Esos códigos son del **Catálogo 05**. El **Catálogo 08** es únicamente el sistema de cálculo del ISC (`cbc:TierRange`). Además se aclara que "Anexo 8" es el conjunto de catálogos | 3.1 a 3.5, 7, 10, 11 |
-| El XML se armaba con `StringBuilder` | Clases UBL serializadas con `XmlSerializer` (escape automático), salida en ISO-8859-1, validación contra el XSD oficial | 10 |
-| El XML no tenía emisor ni líneas, y un `TaxTotal` por tributo | `AccountingSupplierParty`, `InvoiceLine` por ítem (con su `TaxTotal`) y **un solo** `TaxTotal` de cabecera con varios `TaxSubtotal` | 10.2 |
+| El XML se armaba con `StringBuilder` | Clases **generadas desde el XSD oficial** (`tools/ABC.Billing.GenerarClasesUbl`), serializadas con `XmlSerializer` (escape automático), salida en ISO-8859-1, validación contra el mismo XSD | 10 |
+| El XML no tenía emisor ni líneas, y un `TaxTotal` por tributo | `AccountingSupplierParty`, `LineaComprobante` por ítem (con su `TaxTotal`) y **un solo** `TaxTotal` de cabecera con varios `TaxSubtotal` | 10.2 |
 | `LineExtensionAmount` solo sumaba las gravadas | Suma el valor de venta de **todas** las operaciones onerosas (gravadas, exoneradas, inafectas y exportación) | 7.1 |
 | No se calculaba el ISC | ISC primero (sistemas 01 y 02), IGV sobre (valor de venta + ISC) | 7.1 |
 | Regex de serie `[F|B]` aceptaba `|`; serie y correlativo por defecto `F001-1` | `^[FB][A-Z0-9]{3}$`; el correlativo lo asigna el servidor de forma atómica; F para facturas y B para boletas | 6.2, 8.4 |
@@ -54,6 +57,15 @@ Esta especificación distingue lo que **ya existe en el código** de este reposi
 | Faltaban los formatos 14.1 y 12.1 en la matriz | Secciones 11.5 y 11.6, con el cruce campo por campo | 11 |
 | Se afirmaba que `UnidadMedida` era un `string` libre | Enum del Catálogo 03 validado en el mapeador | 6.3 |
 | Archivos de la estructura de carpetas inexistentes | El árbol de la sección 8.4 se generó a partir de los archivos reales | 8.4 |
+
+### 1.5 Taller 2: generar el XML de la factura desde el XSD
+
+| Requisito del profesor | Dónde se cumple |
+|:---|:---|
+| Generar el XML de la factura a partir del `UBL-Invoice-2.1.xsd` oficial de OASIS | Las clases de [`UblInvoice21.generated.cs`](../src/ABC.Billing.Infrastructure/UblEngine/Generado/UblInvoice21.generated.cs) se **generan desde el XSD** con `tools/ABC.Billing.GenerarClasesUbl`; `GeneradorXmlUblFactura21` las llena y serializa, y el resultado se valida contra el mismo XSD (sección 10.6) |
+| En el lenguaje del dominio | El dominio habla de comprobantes, líneas, tributos y clientes (`Comprobante`, `LineaComprobante`, `SubtotalTributo`, `Cliente`). Las etiquetas UBL solo existen en el adaptador de Infraestructura; lo comprueban las pruebas de `AislamientoDelDominioTests` |
+| Pruebas unitarias de generación | [`tests/ABC.Billing.Tests`](../tests/ABC.Billing.Tests) (xUnit), carpeta `Generacion/`: 58 pruebas de estructura, catálogos, importes, escape, codificación, XSD, firma y fidelidad con el XSD |
+| Fecha límite 12/11/2026 (el profesor clona el repositorio, que es público) | El repositorio compila y prueba tras clonarlo: `git clone` y `dotnet test` (ver `README.md`) |
 
 ## 2. Estándar y versiones
 
@@ -141,17 +153,17 @@ El software básico guarda cinco campos por movimiento. Ninguno se pierde: cada 
 
 | Campo legado | Entidad nueva | Destino | Regla |
 |:---|:---|:---|:---|
-| `fecha` | `KardexMovement.Fecha` y `LegacyMovementAudit.Fecha` | formato 12.1, campo 10 | Se acepta `dd/MM/yyyy` o `yyyy-MM-dd`; una fecha imposible (31/02) se reporta como error de esa fila |
-| `ingreso` | `KardexMovement.Entrada` | formato 12.1, campo 17 | `>= 0` |
-| `salida` | `LegacyMovementAudit.Salida` (y se descuenta del saldo) | formato 12.1, campo 18 | `>= 0`; no puede dejar saldo negativo |
-| `producto` | `KardexMovement.Sku` y `DescripcionExistencia` | formato 12.1, campos 7 y 15 | Se normaliza (espacios y mayúsculas) y recibe un SKU estable `MIG-000001` |
-| `nro_documento` | `LegacyMovementAudit.NroDocumento` | formato 12.1, campos 12 y 13 | Se conserva tal cual para la trazabilidad |
+| `fecha` | `MovimientoKardex.Fecha` y `AuditoriaMovimientoLegado.Fecha` | formato 12.1, campo 10 | Se acepta `dd/MM/yyyy` o `yyyy-MM-dd`; una fecha imposible (31/02) se reporta como error de esa fila |
+| `ingreso` | `MovimientoKardex.Entrada` | formato 12.1, campo 17 | `>= 0` |
+| `salida` | `AuditoriaMovimientoLegado.Salida` (y se descuenta del saldo) | formato 12.1, campo 18 | `>= 0`; no puede dejar saldo negativo |
+| `producto` | `MovimientoKardex.Sku` y `DescripcionExistencia` | formato 12.1, campos 7 y 15 | Se normaliza (espacios y mayúsculas) y recibe un SKU estable `MIG-000001` |
+| `nro_documento` | `AuditoriaMovimientoLegado.NroDocumento` | formato 12.1, campos 12 y 13 | Se conserva tal cual para la trazabilidad |
 
 ### 4.2 Estrategia
 
 1. Los movimientos históricos **no se facturan**: no se generan comprobantes electrónicos para ellos.
 2. Por cada producto se crea **un** movimiento `SALDO_INICIAL_MIGRACION` con el saldo (`Σ ingreso − Σ salida`). En el formato 12.1, la primera tupla corresponde al saldo inicial.
-3. Cada fila original queda en `migracion_legado_auditoria`, con el `Sku` y el `KardexMovementId` al que contribuyó.
+3. Cada fila original queda en `migracion_legado_auditoria`, con el `Sku` y el `MovimientoKardexId` al que contribuyó.
 4. Un producto con saldo negativo no se migra: sus filas se reportan con el mensaje "concilie el stock antes de migrar".
 5. El resultado devuelve totales, saldos por producto y errores por número de fila.
 
@@ -207,16 +219,16 @@ Ejemplo ejecutado en las pruebas (6 filas): 3 migradas y 3 con error, con `ARROZ
 
 ```mermaid
 classDiagram
-    class Invoice {
+    class Comprobante {
         +Guid Id
         +TipoComprobante TipoComprobante
         +TipoOperacion TipoOperacion
-        +DocumentSeries Series
+        +SerieComprobante Numeracion
         +Emisor Emisor
-        +Customer Cliente
+        +Cliente Cliente
         +TipoMoneda Moneda
-        +List~InvoiceLine~ Items
-        +List~TaxSubtotal~ Tributos
+        +List~LineaComprobante~ Lineas
+        +List~SubtotalTributo~ Tributos
         +decimal TotalValorVenta
         +decimal TotalTributos
         +decimal ImporteTotalPagar
@@ -224,7 +236,7 @@ classDiagram
         +byte[] XmlFirmado
         +byte[] CdrZip
     }
-    class InvoiceLine {
+    class LineaComprobante {
         +int NumeroLinea
         +UnidadMedida UnidadMedida
         +decimal Cantidad
@@ -237,34 +249,34 @@ classDiagram
         +decimal MontoIgv
         +decimal MontoIcbper
     }
-    class TaxSubtotal {
+    class SubtotalTributo {
         +TributoSunat Tributo
         +decimal? BaseImponible
         +decimal Monto
     }
-    class Emisor { +RucNumber Ruc +string RazonSocial }
-    class Customer { +TipoDocumentoIdentidad TipoDocumento +string NumeroDocumento }
-    class DocumentSeries { +string Serie +long Correlativo +SerieNumero() }
-    class RucNumber { +string Value }
-    class KardexMovement { +DateOnly Fecha +string Sku +decimal Entrada +string Concepto }
-    class LegacyMovementAudit { +int Fila +string NroDocumento +Guid KardexMovementId }
-    Invoice "1" *-- "1..*" InvoiceLine
-    Invoice "1" *-- "0..*" TaxSubtotal
-    Invoice --> Emisor
-    Invoice --> Customer
-    Invoice --> DocumentSeries
-    Emisor --> RucNumber
-    KardexMovement "1" <-- "1..*" LegacyMovementAudit
+    class Emisor { +Ruc Ruc +string RazonSocial }
+    class Cliente { +TipoDocumentoIdentidad TipoDocumento +string NumeroDocumento }
+    class SerieComprobante { +string Serie +long Correlativo +SerieNumero() }
+    class Ruc { +string Value }
+    class MovimientoKardex { +DateOnly Fecha +string Sku +decimal Entrada +string Concepto }
+    class AuditoriaMovimientoLegado { +int Fila +string NroDocumento +Guid MovimientoKardexId }
+    Comprobante "1" *-- "1..*" LineaComprobante
+    Comprobante "1" *-- "0..*" SubtotalTributo
+    Comprobante --> Emisor
+    Comprobante --> Cliente
+    Comprobante --> SerieComprobante
+    Emisor --> Ruc
+    MovimientoKardex "1" <-- "1..*" AuditoriaMovimientoLegado
 ```
 
 ### 6.2 Value Objects y reglas de validación
 
 | Value Object | Regla | Fuente |
 |:---|:---|:---|
-| `RucNumber` | 11 dígitos, prefijo 10, 15, 17 o 20, dígito verificador Módulo 11 | SUNAT |
-| `DocumentSeries` | Serie `^[FB][A-Z0-9]{3}$` (F factura, B boleta); correlativo de 1 a 8 dígitos desde 1; `SerieNumero = F001-1` es el `cbc:ID` | Manual del Programador 1.2 |
+| `Ruc` | 11 dígitos, prefijo 10, 15, 17 o 20, dígito verificador Módulo 11 | SUNAT |
+| `SerieComprobante` | Serie `^[FB][A-Z0-9]{3}$` (F factura, B boleta); correlativo de 1 a 8 dígitos desde 1; `SerieNumero = F001-1` es el `cbc:ID` | Manual del Programador 1.2 |
 | `NombreArchivoSunat` | `RUC-TT-SERIE-CORRELATIVO` (comprobantes), `RUC-RA-YYYYMMDD-CCCCC` (baja), `RUC-RC-YYYYMMDD-CCCCC` (resumen). El ZIP y el XML comparten nombre | Manual del Programador 1.2 |
-| `Customer` | RUC con Módulo 11, DNI de 8 dígitos, CE o pasaporte alfanumérico de hasta 12 | Catálogo 06 |
+| `Cliente` | RUC con Módulo 11, DNI de 8 dígitos, CE o pasaporte alfanumérico de hasta 12 | Catálogo 06 |
 | `TributoSunat` | Registro inmutable con código, nombre, código internacional y categoría UN/ECE 5305 | Catálogo 05 |
 
 ### 6.3 DTO de entrada: `CreateInvoiceRequest`
@@ -376,14 +388,14 @@ flowchart LR
     subgraph CORE["Core (hexágono, sin dependencias externas)"]
         PIN(["Puertos de entrada<br/>IEmitirFacturaUseCase<br/>ITransmitirComprobanteUseCase<br/>IConsultarComprobanteUseCase<br/>IMigrarDatosLegadosUseCase"])
         UC["Casos de uso<br/>(orquestan el flujo)"]
-        DOM["Dominio<br/>Invoice, InvoiceLine, RucNumber,<br/>DocumentSeries, TaxCalculatorService"]
-        POUT(["Puertos de salida<br/>IInvoiceRepository, ISerieCorrelativoRepository,<br/>IUblXmlGenerator, IUblXsdValidator,<br/>IDigitalSigner, ISunatOseClient,<br/>IKardexRepository, IReloj"])
+        DOM["Dominio<br/>Comprobante, LineaComprobante, Ruc,<br/>SerieComprobante, CalculadoraTributos"]
+        POUT(["Puertos de salida<br/>IRepositorioComprobantes, IRepositorioCorrelativos,<br/>IGeneradorXmlUbl, IValidadorXsdUbl,<br/>IFirmadorDigital, IClienteSunat,<br/>IRepositorioKardex, IReloj"])
     end
     subgraph INFRA["Infraestructura (adaptadores)"]
-        A1["UblInvoice21XmlSerializer<br/>UblXsdValidator"]
-        A2["XmlDsigCertificateSigner"]
-        A3["SunatSoapOseClient + CdrParser"]
-        A4["InMemory*Repository<br/>(SqlInvoiceRepository en fase 2)"]
+        A1["GeneradorXmlUblFactura21<br/>(clases generadas del XSD)<br/>ValidadorXsdUbl"]
+        A2["FirmadorXmlDsig"]
+        A3["ClienteSoapSunat + LectorCdr"]
+        A4["Repositorios en memoria<br/>(RepositorioComprobantesSql en fase 2)"]
     end
     CTRL --> PIN --> UC --> DOM
     UC --> POUT
@@ -397,11 +409,11 @@ La regla de dependencia es: **Presentación → Core ← Infraestructura**. El C
 
 | Puerto (Core) | Adaptador actual | Adaptador futuro | Microservicio candidato |
 |:---|:---|:---|:---|
-| `IUblXmlGenerator` + `IUblXsdValidator` | `UblInvoice21XmlSerializer`, `UblXsdValidator` | Mismo código empaquetado como servicio | **Servicio de documentos UBL** |
-| `IDigitalSigner` | `XmlDsigCertificateSigner` (certificado en archivo) | HSM o almacén de certificados | **Servicio de firma** |
-| `ISunatOseClient` | `SunatSoapOseClient` (SOAP) | Cliente de otro OSE; cola de reintentos | **Servicio de integración SUNAT/OSE** |
-| `IInvoiceRepository`, `ISerieCorrelativoRepository` | `InMemory*` | `SqlInvoiceRepository` (esquema en [`sql/001_schema.sql`](sql/001_schema.sql)) | **Servicio de comprobantes** |
-| `IKardexRepository` | `InMemoryKardexRepository` | SQL | **Servicio de inventario** |
+| `IGeneradorXmlUbl` + `IValidadorXsdUbl` | `GeneradorXmlUblFactura21`, `ValidadorXsdUbl` | Mismo código empaquetado como servicio | **Servicio de documentos UBL** |
+| `IFirmadorDigital` | `FirmadorXmlDsig` (certificado en archivo) | HSM o almacén de certificados | **Servicio de firma** |
+| `IClienteSunat` | `ClienteSoapSunat` (SOAP) | Cliente de otro OSE; cola de reintentos | **Servicio de integración SUNAT/OSE** |
+| `IRepositorioComprobantes`, `IRepositorioCorrelativos` | `RepositorioComprobantesEnMemoria`, `RepositorioCorrelativosEnMemoria` | `RepositorioComprobantesSql` (esquema en [`sql/001_schema.sql`](sql/001_schema.sql)) | **Servicio de comprobantes** |
+| `IRepositorioKardex` | `RepositorioKardexEnMemoria` | SQL | **Servicio de inventario** |
 | `IReloj` | `RelojPeru` (UTC−5) | Reloj de prueba | n/a |
 
 Cuando la empresa crezca, cada fila se separa como proceso independiente: el caso de uso deja de llamar al adaptador en memoria y llama a un cliente HTTP o a un bus de mensajes que implementa **el mismo puerto**. El dominio y los casos de uso no cambian.
@@ -414,12 +426,12 @@ sequenceDiagram
     actor Cajero
     participant C as InvoicesController
     participant U as EmitirFacturaService
-    participant S as ISerieCorrelativoRepository
-    participant T as TaxCalculatorService
-    participant G as IUblXmlGenerator
-    participant F as IDigitalSigner
-    participant V as IUblXsdValidator
-    participant R as IInvoiceRepository
+    participant S as IRepositorioCorrelativos
+    participant T as CalculadoraTributos
+    participant G as IGeneradorXmlUbl
+    participant F as IFirmadorDigital
+    participant V as IValidadorXsdUbl
+    participant R as IRepositorioComprobantes
     Cajero->>C: POST /api/v1/invoices (JSON)
     C->>C: DTO a comando (valida catálogos, 422 si no existen)
     C->>U: EmitirAsync(comando)
@@ -429,7 +441,7 @@ sequenceDiagram
     U->>F: Firmar(xml) (XMLDSig)
     U->>V: Validar(xml firmado) contra UBL-Invoice-2.1.xsd
     U->>R: GuardarAsync(invoice, estado Firmado)
-    U-->>C: Invoice
+    U-->>C: Comprobante
     C-->>Cajero: 201 Created + Location
 ```
 
@@ -469,23 +481,23 @@ abc-billing-solution/
 │   │   │       └── TransmitirComprobanteService.cs
 │   │   ├── Domain/
 │   │   │   ├── Entities/
-│   │   │   │   ├── Customer.cs
+│   │   │   │   ├── Cliente.cs
+│   │   │   │   ├── Comprobante.cs
 │   │   │   │   ├── Emisor.cs
-│   │   │   │   ├── Invoice.cs
-│   │   │   │   ├── InvoiceLine.cs
-│   │   │   │   ├── KardexMovement.cs
-│   │   │   │   └── TaxSubtotal.cs
+│   │   │   │   ├── LineaComprobante.cs
+│   │   │   │   ├── MovimientoKardex.cs
+│   │   │   │   └── SubtotalTributo.cs
 │   │   │   ├── Enums/
 │   │   │   │   ├── Catalogos.cs
 │   │   │   │   └── TributoSunat.cs
 │   │   │   ├── Services/
+│   │   │   │   ├── CalculadoraTributos.cs
 │   │   │   │   ├── ClasificadorCodigosSunat.cs
-│   │   │   │   ├── MontoEnLetras.cs
-│   │   │   │   └── TaxCalculatorService.cs
+│   │   │   │   └── MontoEnLetras.cs
 │   │   │   ├── ValueObjects/
-│   │   │   │   ├── DocumentSeries.cs
 │   │   │   │   ├── NombreArchivoSunat.cs
-│   │   │   │   └── RucNumber.cs
+│   │   │   │   ├── Ruc.cs
+│   │   │   │   └── SerieComprobante.cs
 │   │   │   └── DomainExceptions.cs
 │   │   ├── Ports/
 │   │   │   ├── Inbound/
@@ -494,37 +506,35 @@ abc-billing-solution/
 │   │   │   │   ├── IMigrarDatosLegadosUseCase.cs
 │   │   │   │   └── ITransmitirComprobanteUseCase.cs
 │   │   │   └── Outbound/
-│   │   │       ├── IDigitalSigner.cs
-│   │   │       ├── IInvoiceRepository.cs
-│   │   │       ├── IKardexRepository.cs
+│   │   │       ├── IClienteSunat.cs
+│   │   │       ├── IFirmadorDigital.cs
+│   │   │       ├── IGeneradorXmlUbl.cs
 │   │   │       ├── IReloj.cs
-│   │   │       ├── ISerieCorrelativoRepository.cs
-│   │   │       ├── ISunatOseClient.cs
-│   │   │       ├── IUblXmlGenerator.cs
-│   │   │       └── IUblXsdValidator.cs
+│   │   │       ├── IRepositorioComprobantes.cs
+│   │   │       ├── IRepositorioCorrelativos.cs
+│   │   │       ├── IRepositorioKardex.cs
+│   │   │       └── IValidadorXsdUbl.cs
 │   │   └── ABC.Billing.Core.csproj
 │   ├── ABC.Billing.Infrastructure/
 │   │   ├── Cryptography/
 │   │   │   ├── CertificadoDePrueba.cs
-│   │   │   └── XmlDsigCertificateSigner.cs
+│   │   │   └── FirmadorXmlDsig.cs
 │   │   ├── Persistence/
 │   │   │   ├── InMemory/
-│   │   │   │   └── InMemoryRepositories.cs
+│   │   │   │   └── RepositoriosEnMemoria.cs
 │   │   │   └── Repositories/
-│   │   │       └── SqlInvoiceRepository.cs
+│   │   │       └── RepositorioComprobantesSql.cs
 │   │   ├── SunatSoap/
-│   │   │   ├── CdrParser.cs
-│   │   │   └── SunatSoapOseClient.cs
+│   │   │   ├── ClienteSoapSunat.cs
+│   │   │   └── LectorCdr.cs
 │   │   ├── UblEngine/
-│   │   │   ├── Dominio/   (ComprobanteUbl, LineaUbl, VocabularioUbl: la traducción en lenguaje del dominio)
-│   │   │   ├── Generated/
-│   │   │   │   └── UblInvoice21.g.cs   (generado desde UBL-Invoice-2.1.xsd con tools/UblCodeGen)
-│   │   │   ├── Model/
-│   │   │   │   └── UblNamespaces.cs
+│   │   │   ├── Generacion/
+│   │   │   │   ├── GeneradorXmlUblFactura21.cs
+│   │   │   │   └── ValidadorXsdUbl.cs
+│   │   │   ├── Generado/
+│   │   │   │   └── UblInvoice21.generated.cs
 │   │   │   ├── Schemas/   (XSD oficiales de OASIS UBL 2.1: maindoc/ y common/)
-│   │   │   └── Serializers/
-│   │   │       ├── UblInvoice21XmlSerializer.cs
-│   │   │       └── UblXsdValidator.cs
+│   │   │   └── UblNamespaces.cs
 │   │   └── ABC.Billing.Infrastructure.csproj
 │   └── ABC.Billing.Presentation.Api/
 │       ├── Controllers/
@@ -545,15 +555,35 @@ abc-billing-solution/
 │       ├── appsettings.json
 │       └── Program.cs
 ├── tests/
-│   ├── ABC.Billing.SmokeTests/
-│   │   ├── ABC.Billing.SmokeTests.csproj
-│   │   └── Program.cs
-│   └── ABC.Billing.UblEngine.Tests/   (xUnit: pruebas unitarias de generación del XML, Taller 2)
+│   └── ABC.Billing.Tests/
+│       ├── Aplicacion/
+│       │   ├── EmisionDeComprobantesTests.cs
+│       │   ├── MigracionDeDatosLegadosTests.cs
+│       │   └── TransmisionDeComprobantesTests.cs
+│       ├── Dominio/
+│       │   ├── AislamientoDelDominioTests.cs
+│       │   ├── CalculoTributosTests.cs
+│       │   └── ValoresDelDominioTests.cs
+│       ├── Generacion/
+│       │   ├── FirmaDigitalTests.cs
+│       │   ├── GeneracionDesdeXsdTests.cs
+│       │   ├── GeneracionXmlTests.cs
+│       │   └── ValidacionXsdTests.cs
+│       ├── Infraestructura/
+│       │   └── ClienteSunatTests.cs
+│       ├── Soporte/
+│       │   └── Fabrica.cs
+│       └── ABC.Billing.Tests.csproj
 ├── tools/
-│   └── UblCodeGen/generar_modelo_ubl.py   (XSD → clases C#)
+│   ├── ABC.Billing.GenerarClasesUbl/
+│   │   ├── ABC.Billing.GenerarClasesUbl.csproj
+│   │   └── Program.cs
+│   ├── ABC.Billing.GenerarEjemplos/
+│   │   ├── ABC.Billing.GenerarEjemplos.csproj
+│   │   └── Program.cs
+│   └── README.md
 ├── .gitignore
 ├── ABC.Billing.sln
-├── NuGet.config
 └── README.md
 ```
 
@@ -617,7 +647,7 @@ Todos los errores usan `application/problem+json` (RFC 7807).
 
 ### 10.1 Estructura generada
 
-Orden de los elementos del `Invoice` (sigue la secuencia del XSD):
+Orden de los elementos del `Comprobante` (sigue la secuencia del XSD):
 
 | N.° | Elemento | Contenido |
 |:---|:---|:---|
@@ -719,9 +749,29 @@ Totales de cabecera (los de la sección 7.2):
 ### 10.5 Validación contra el XSD y codificación
 
 - El XML **ya firmado** se valida contra `UBL-Invoice-2.1.xsd` antes de guardarse y enviarse. Se valida el documento firmado porque el XSD exige contenido en `ext:ExtensionContent`, es decir, la firma. El Manual (4.2) pide validar siempre antes del envío.
-- Las clases UBL se serializan con `XmlSerializer`: el escape de `&`, `<`, `>` y comillas es automático (no hay `StringBuilder` ni cadenas concatenadas). No se usa `CDATA`, porque el escape ya garantiza un XML correcto.
+- Las clases UBL **se generan desde el XSD** (sección 10.6) y se serializan con `XmlSerializer`: el escape de `&`, `<`, `>` y comillas es automático (no hay `StringBuilder` ni cadenas concatenadas). No se usa `CDATA`, porque el escape ya garantiza un XML correcto.
 - Salida en **ISO-8859-1** con la declaración `<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>`, que permite tildes y la eñe (Manual 1.4.c).
 - Observación de la guía: dentro de `cac:TierRange` no se admiten atributos de catálogo (el XSD los rechaza); por eso `cbc:TierRange` lleva solo el código del Catálogo 08.
+
+### 10.6 Cómo se generan las clases desde el XSD
+
+Las clases de [`UblInvoice21.generated.cs`](../src/ABC.Billing.Infrastructure/UblEngine/Generado/UblInvoice21.generated.cs) **no se escriben a mano**: las produce `tools/ABC.Billing.GenerarClasesUbl`, que lee `UBL-Invoice-2.1.xsd` (con sus `import` e `include`), parte del elemento global `Invoice` y emite una clase por cada tipo alcanzable (614 en total), con los atributos de `XmlSerializer` (nombre, espacio de nombres y **orden**) tomados del esquema.
+
+```bash
+dotnet run --project tools/ABC.Billing.GenerarClasesUbl --   src/ABC.Billing.Infrastructure/UblEngine/Schemas/maindoc/UBL-Invoice-2.1.xsd   src/ABC.Billing.Infrastructure/UblEngine/Generado/UblInvoice21.generated.cs
+```
+
+| Regla del XSD | Cómo queda en la clase generada |
+|:---|:---|
+| Secuencia de elementos | Propiedades con `[XmlElement(Name, Namespace, Order)]` en el mismo orden del XSD |
+| `maxOccurs > 1` | `List<T>` |
+| `minOccurs = 0` | Propiedad anulable (`T?`) |
+| Tipo de dato de UBL (importe, código, texto) | Clase con `[XmlText] Value` y sus atributos (`currencyID`, `unitCode`, `listID`...) |
+| `xsd:any` (contenido de la extensión) | `[XmlAnyElement] XmlElement? Any` |
+
+Las pruebas de `GeneracionDesdeXsdTests` comparan las clases generadas con el esquema cargado en memoria (mismos elementos, mismo orden, obligatorios no anulables y repetibles como lista). Se usó una herramienta propia porque `xsd.exe` solo existe en Windows y la de Mono no resuelve los `import` relativos de UBL.
+
+Ver el flujo completo en la sección 8.3: el adaptador `GeneradorXmlUblFactura21` es el único código que conoce estas clases; el dominio solo entrega un `Comprobante`.
 
 ## 11. Matriz de trazabilidad normativa
 
@@ -803,7 +853,7 @@ Estructura del Anexo 1 de la RS 361-2015/SUNAT. Cada comprobante aceptado alimen
 |:---|:---|:---|:---|
 | 4 | Fecha de emisión | `FechaEmision` | `cbc:IssueDate` |
 | 6 | Tipo de comprobante (Tabla 10) | `TipoComprobante` | `cbc:InvoiceTypeCode` (Catálogo 01) |
-| 7 y 8 | Serie y número | `Series.Serie`, `Series.Correlativo` | `cbc:ID` |
+| 7 y 8 | Serie y número | `Numeracion.Serie`, `Numeracion.Correlativo` | `cbc:ID` |
 | 10 y 11 | Tipo y número de documento de identidad del cliente | `Cliente.TipoDocumento`, `NumeroDocumento` | `cbc:CompanyID` (`@schemeID`, Catálogo 06) |
 | 12 | Razón social del cliente | `Cliente.RazonSocial` | `cbc:RegistrationName` |
 | 13 | Valor facturado de la exportación | `TotalExportacion` | `TaxSubtotal(9995)` |
@@ -829,13 +879,13 @@ Estructura de la RS 042-2018/SUNAT (vigente desde 2019). La migración alimenta 
 | 4 | Código de establecimiento anexo (`9999` si el almacén es de un tercero) | `Emisor.CodigoEstablecimiento` | |
 | 5 a 7 | Catálogo (Tabla 13: 1 Naciones Unidas, 2 CUBSO, 3 GS1, 9 otros), tipo de existencia (Tabla 5) y **código propio de la existencia** | `Sku` (`MIG-000001`, catálogo 9 "otros") | `producto` |
 | 8 y 9 | Código UNSPSC o CUBSO (obligatorio desde 01/01/2019) | pendiente (Catálogo 25) | |
-| 10 | Fecha de emisión del documento de traslado, comprobante de pago, documento interno o similar | `KardexMovement.Fecha` | `fecha` |
+| 10 | Fecha de emisión del documento de traslado, comprobante de pago, documento interno o similar | `MovimientoKardex.Fecha` | `fecha` |
 | 11 | Tipo del documento (Tabla 10) | documento interno | |
-| 12 y 13 | Serie y número del documento (si no existe, `0`) | `LegacyMovementAudit.NroDocumento` | `nro_documento` |
+| 12 y 13 | Serie y número del documento (si no existe, `0`) | `AuditoriaMovimientoLegado.NroDocumento` | `nro_documento` |
 | 14 | Tipo de operación efectuada (Tabla 12) | el código de la Tabla 12 que corresponda a **saldo inicial** (verificar en el Anexo 3 de la RS 286-2009) | |
-| 15 | Descripción de la existencia | `KardexMovement.DescripcionExistencia` | `producto` |
+| 15 | Descripción de la existencia | `MovimientoKardex.DescripcionExistencia` | `producto` |
 | 16 | Código de la unidad de medida (**Tabla 6** del PLE, distinta del Catálogo 03) | requiere equivalencia de `NIU` a la Tabla 6 | |
-| 17 | Entradas de unidades físicas (**la primera tupla corresponde al saldo inicial**) | `KardexMovement.Entrada` | `ingreso` |
+| 17 | Entradas de unidades físicas (**la primera tupla corresponde al saldo inicial**) | `MovimientoKardex.Entrada` | `ingreso` |
 | 18 | Salidas de unidades físicas (negativo o `0.00`) | no se usa en la migración (el saldo ya las descuenta) | `salida` |
 | 19 | Estado de la operación (1, 8 o 9) | `1` | |
 
@@ -858,7 +908,8 @@ Todo lo siguiente se ejecutó antes de entregar:
 
 | Verificación | Resultado |
 |:---|:---|
-| `dotnet run --project tests/ABC.Billing.SmokeTests` (dominio, XML, firma, CDR, migración, concurrencia) | **64 comprobaciones OK, 0 fallas** |
+| Pruebas unitarias xUnit (`tests/ABC.Billing.Tests`): generación, XSD, firma, cálculo, dominio, emisión, transmisión, migración, CDR | **153 pruebas, 0 fallas** (ejecutadas con un ejecutor que imita la API de xUnit, ver nota) |
+| Prueba de mutación: se cambió la tasa del IGV a 19 % | 11 pruebas fallaron; al restaurarla pasan las 153 |
 | Validación del XML generado contra `UBL-Invoice-2.1.xsd` con .NET (`XmlSchemaSet`) y, de forma independiente, con `lxml`/libxml2 | Factura y boleta de ejemplo **válidas** en ambos validadores |
 | Firma XMLDSig: verificación y alteración posterior del XML | Válida; **inválida** al modificar el XML |
 | Correlativo bajo concurrencia | 500 asignaciones paralelas, 500 correlativos distintos |
@@ -866,7 +917,7 @@ Todo lo siguiente se ejecutó antes de entregar:
 | `openapi.yaml` con `openapi-spec-validator` | OpenAPI 3.0.3 válido |
 | `sql/001_schema.sql` analizado como PostgreSQL con `sqlglot` | 6 sentencias válidas |
 
-**Taller 2 (generación del XML desde el XSD):** ver [`TALLER_2_XML_DESDE_XSD.md`](TALLER_2_XML_DESDE_XSD.md). Las pruebas unitarias de `tests/ABC.Billing.UblEngine.Tests` se agregaron después de la tabla anterior y deben ejecutarse con `dotnet test`.
+**Nota sobre xUnit:** en el entorno donde se desarrolló no había acceso a NuGet, así que las pruebas se compilaron y ejecutaron con un ejecutor propio que imita el subconjunto de la API de xUnit que usan. En una máquina con Internet se ejecutan con `dotnet test`, que restaura `xunit` 2.9.2 y `Microsoft.NET.Test.Sdk` 17.11.1.
 
 **No verificado:** el envío real al servicio beta de SUNAT (el entorno de pruebas no tenía salida a Internet), el cliente MAUI y los empaquetados MSI/APK.
 
