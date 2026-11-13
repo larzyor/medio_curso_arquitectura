@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ABC.Billing.Presentation.Api": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5099",
+      "environmentVariables": { "ASPNETCORE_ENVIRONMENT": "Development" }
+    }
+  }
+}

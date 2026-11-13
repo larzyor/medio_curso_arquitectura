@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ABC Billing - Emitir comprobante</title>
+<style>
+  :root { --bg:#f5f6f8; --card:#fff; --ink:#1c2230; --muted:#5d6678; --line:#d9dde5; --brand:#0b5fff; --ok:#0a7d3b; --err:#b42318; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12151c; --card:#1b2029; --ink:#e8ebf2; --muted:#9aa4b8; --line:#2c3341; --brand:#6ea0ff; --ok:#52c47f; --err:#ff8a80; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 system-ui, Segoe UI, Roboto, sans-serif; }
+  main { max-width:1100px; margin:0 auto; padding:20px 16px 48px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  p.sub { margin:0 0 18px; color:var(--muted); }
+  section { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px; }
+  h2 { font-size:16px; margin:0 0 12px; }
+  .grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); }
+  label { display:block; font-size:13px; color:var(--muted); margin-bottom:4px; }
+  input, select, textarea, button { font:inherit; color:inherit; }
+  input, select, textarea { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:transparent; }
+  input:focus, select:focus, textarea:focus, button:focus-visible { outline:2px solid var(--brand); outline-offset:1px; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:12px; color:var(--muted); font-weight:600; padding:0 6px 6px 0; }
+  td { padding:0 6px 6px 0; vertical-align:top; }
+  td.chk { text-align:center; vertical-align:middle; }
+  td.chk input { width:auto; }
+  .items { overflow-x:auto; }
+  .items table { min-width:980px; }
+  select.unidad { min-width:78px; } select.afect { min-width:290px; }
+  button { cursor:pointer; border:1px solid var(--line); background:transparent; border-radius:7px; padding:8px 14px; }
+  button.primary { background:var(--brand); border-color:var(--brand); color:#fff; font-weight:600; }
+  button.danger { color:var(--err); padding:6px 10px; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .msg { padding:10px 12px; border-radius:7px; margin-top:12px; white-space:pre-wrap; }
+  .msg.err { border:1px solid var(--err); color:var(--err); }
+  .msg.ok { border:1px solid var(--ok); color:var(--ok); }
+  .aviso { border-left:4px solid var(--brand); padding:8px 12px; margin:12px 0; color:var(--muted); }
+  textarea#xml { min-height:340px; font:12px/1.4 ui-monospace, Consolas, monospace; white-space:pre; }
+  dl { display:grid; grid-template-columns:auto 1fr; gap:2px 14px; margin:0; }
+  dt { color:var(--muted); } dd { margin:0; text-align:right; font-variant-numeric:tabular-nums; }
+  .hidden { display:none; }
+  small { color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>ABC Billing &middot; Emitir comprobante</h1>
+  <p class="sub">Ingresa los datos del comprobante. El sistema calcula los impuestos, asigna serie y correlativo, genera el XML UBL 2.1 a partir del XSD, lo firma y lo valida contra el mismo XSD.</p>
+
+  <section>
+    <h2>1. Comprobante</h2>
+    <div class="grid">
+      <div><label for="tipo">Tipo (Cat&aacute;logo 01)</label>
+        <select id="tipo"><option value="01">Factura (01)</option><option value="03">Boleta de venta (03)</option></select></div>
+      <div><label for="moneda">Moneda (Cat&aacute;logo 02)</label>
+        <select id="moneda"><option>PEN</option><option>USD</option></select></div>
+      <div><label for="serie">Serie <small>(se sugiere una al azar)</small></label><input id="serie" placeholder="F001 o B001" maxlength="4"></div>
+      <div><label for="token">Token de acceso <small>(desarrollo)</small></label><input id="token" value="dev-emisor-token" autocomplete="off"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. Cliente</h2>
+    <div class="grid">
+      <div><label for="cDoc">Tipo de documento (Cat&aacute;logo 06)</label>
+        <select id="cDoc"><option value="6">RUC (6)</option><option value="1">DNI (1)</option><option value="4">Carn&eacute; de extranjer&iacute;a (4)</option><option value="7">Pasaporte (7)</option><option value="0">Sin documento (0)</option></select></div>
+      <div><label for="cNum">N&uacute;mero de documento</label><input id="cNum" value="20123456786" maxlength="15"></div>
+      <div style="grid-column:span 2"><label for="cNom">Raz&oacute;n social o nombres</label><input id="cNom" value="BODEGA EL NANDU S.A.C." maxlength="250"></div>
+      <div style="grid-column:span 2"><label for="cDir">Direcci&oacute;n (opcional)</label><input id="cDir" value="AV. LOS ANDES 123 - LIMA" maxlength="250"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. &Iacute;tems</h2>
+    <div class="items">
+      <table>
+        <thead><tr>
+          <th>C&oacute;digo</th><th>Descripci&oacute;n</th><th>Unidad</th><th>Cantidad</th><th>Valor unitario<br>(sin IGV)</th><th>Afectaci&oacute;n IGV (Cat. 07)</th><th>ICBPER</th><th></th>
+        </tr></thead>
+        <tbody id="items"></tbody>
+      </table>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button type="button" id="agregar">+ Agregar &iacute;tem</button>
+      <small>En operaciones gratuitas (11) el valor unitario es el valor referencial. ICBPER: solo para bolsas de pl&aacute;stico.</small>
+    </div>
+  </section>
+
+  <div class="row">
+    <button type="button" class="primary" id="generar">Generar XML</button>
+    <button type="button" id="ejemplo">Cargar datos de ejemplo</button>
+  </div>
+  <div id="mensaje" class="msg hidden" role="status" aria-live="polite"></div>
+
+  <section id="resultado" class="hidden" style="margin-top:16px">
+    <h2>4. Resultado</h2>
+    <div class="grid" style="grid-template-columns:minmax(220px, 320px) 1fr; align-items:start">
+      <dl id="resumen"></dl>
+      <div>
+        <div class="row" style="margin-bottom:8px">
+          <button type="button" class="primary" id="copiar">Copiar XML</button>
+          <button type="button" id="descargar">Descargar .xml</button>
+          <button type="button" id="nubefact">Abrir probar-xml.nubefact.com</button>
+        </div>
+        <div class="aviso">Para validarlo en nubefact: pega el XML, <strong>marca la casilla &laquo;Firmar&raquo;</strong> y pulsa ENVIAR. Nubefact reemplaza la firma por la de su certificado de prueba.
+        El RUC emisor de este ambiente de desarrollo es el RUC de demostraci&oacute;n de nubefact.</div>
+      </div>
+    </div>
+    <label for="xml" style="margin-top:12px">XML UBL 2.1 firmado (ISO-8859-1)</label>
+    <textarea id="xml" readonly spellcheck="false"></textarea>
+  </section>
+</main>
+
+<script>
+(function () {
+  var AFECTACIONES = [['10', 'Gravado - operación onerosa (10)'], ['20', 'Exonerado (20)'], ['30', 'Inafecto (30)'], ['11', 'Gravado - retiro por premio, gratuito (11)']];
+  var UNIDADES = ['NIU', 'KGM', 'LTR', 'ZZ', 'BX', 'MTR', 'GRM'];
+  var $ = function (id) { return document.getElementById(id); };
+  var ultimoXml = null;   // bytes originales (ISO-8859-1) para descargar sin alterar
+
+  function opciones(lista, seleccion) {
+    return lista.map(function (o) {
+      var v = Array.isArray(o) ? o[0] : o, t = Array.isArray(o) ? o[1] : o;
+      return '<option value="' + v + '"' + (v === seleccion ? ' selected' : '') + '>' + t + '</option>';
+    }).join('');
+  }
+
+  function agregarItem(d) {
+    d = d || {};
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><input class="codigo" maxlength="30" value="' + (d.codigo || '') + '" style="width:90px"></td>' +
+      '<td><input class="desc" maxlength="250" value="' + (d.desc || '') + '" style="min-width:200px"></td>' +
+      '<td><select class="unidad">' + opciones(UNIDADES, d.unidad || 'NIU') + '</select></td>' +
+      '<td><input class="cant" type="number" min="0" step="any" value="' + (d.cant || 1) + '" style="width:90px"></td>' +
+      '<td><input class="valor" type="number" min="0" step="any" value="' + (d.valor || '') + '" style="width:110px"></td>' +
+      '<td><select class="afect">' + opciones(AFECTACIONES, d.afect || '10') + '</select></td>' +
+      '<td class="chk"><input class="icbper" type="checkbox"' + (d.icbper ? ' checked' : '') + ' aria-label="ICBPER"></td>' +
+      '<td><button type="button" class="danger" title="Quitar">Quitar</button></td>';
+    tr.querySelector('button').addEventListener('click', function () {
+      if ($('items').children.length > 1) tr.remove();
+    });
+    $('items').appendChild(tr);
+  }
+
+  function cargarEjemplo() {
+    $('tipo').value = '01'; $('moneda').value = 'PEN'; $('serie').value = serieAleatoria();
+    $('cDoc').value = '6'; $('cNum').value = '20123456786';
+    $('cNom').value = 'BODEGA EL NANDU S.A.C.'; $('cDir').value = 'AV. LOS ANDES 123 - LIMA';
+    $('items').innerHTML = '';
+    agregarItem({ codigo: 'ARR-001', desc: 'Arroz extra 5 kg', unidad: 'NIU', cant: 10, valor: 18.00, afect: '10' });
+    agregarItem({ codigo: 'QUI-002', desc: 'Quinua organica', unidad: 'KGM', cant: 5, valor: 12.50, afect: '20' });
+    agregarItem({ codigo: 'SAL-003', desc: 'Sal de mesa', unidad: 'NIU', cant: 20, valor: 1.50, afect: '30' });
+    agregarItem({ codigo: 'BOL-004', desc: 'Bolsa de plastico', unidad: 'NIU', cant: 3, valor: 0.10, afect: '10', icbper: true });
+    agregarItem({ codigo: 'MUE-005', desc: 'Muestra gratuita (retiro por premio)', unidad: 'NIU', cant: 1, valor: 20.00, afect: '11' });
+  }
+
+  // El demo de nubefact recuerda cada serie-numero: repetir F001-1 con otros datos da el error 1033.
+  // Como el contador de esta API vive en memoria (vuelve a 1 al reiniciar), se sugiere una serie al azar.
+  function serieAleatoria() {
+    var letra = $('tipo').value === '03' ? 'B' : 'F';
+    return letra + String(Math.floor(Math.random() * 900) + 100);
+  }
+
+  function mostrar(texto, tipo) {
+    var m = $('mensaje');
+    m.textContent = texto;
+    m.className = 'msg ' + tipo;
+  }
+
+  function leerFormulario() {
+    var items = Array.prototype.map.call($('items').children, function (tr) {
+      return {
+        codigoProducto: tr.querySelector('.codigo').value.trim(),
+        descripcion: tr.querySelector('.desc').value.trim(),
+        unidadMedida: tr.querySelector('.unidad').value,
+        cantidad: parseFloat(tr.querySelector('.cant').value),
+        valorUnitario: parseFloat(tr.querySelector('.valor').value),
+        afectacionIgv: tr.querySelector('.afect').value,
+        aplicaIcbper: tr.querySelector('.icbper').checked
+      };
+    });
+    return {
+      tipoComprobante: $('tipo').value,
+      tipoOperacion: '0101',
+      serie: $('serie').value.trim() || null,
+      moneda: $('moneda').value,
+      cliente: {
+        tipoDocumento: $('cDoc').value,
+        numeroDocumento: $('cNum').value.trim(),
+        razonSocial: $('cNom').value.trim(),
+        direccion: $('cDir').value.trim() || null
+      },
+      items: items
+    };
+  }
+
+  function textoDeError(estado, cuerpo) {
+    var t = 'Error ' + estado;
+    if (cuerpo && typeof cuerpo === 'object') {
+      if (cuerpo.title) t += ': ' + cuerpo.title;
+      if (cuerpo.detail) t += '\n' + cuerpo.detail;
+      if (cuerpo.errores) t += '\n' + JSON.stringify(cuerpo.errores, null, 2);
+      if (cuerpo.errors) t += '\n' + Object.keys(cuerpo.errors).map(function (k) { return k + ': ' + cuerpo.errors[k].join(' '); }).join('\n');
+    }
+    if (estado === 401 || estado === 403) t += '\nRevisa el token de acceso (en desarrollo: dev-emisor-token).';
+    return t;
+  }
+
+  async function generar() {
+    var boton = $('generar');
+    boton.disabled = true;
+    $('resultado').classList.add('hidden');
+    mostrar('Generando...', 'ok');
+    try {
+      var cuerpo = leerFormulario();
+      var cab = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + $('token').value.trim() };
+      var r = await fetch('/api/v1/invoices', { method: 'POST', headers: cab, body: JSON.stringify(cuerpo) });
+      var json = null;
+      try { json = await r.json(); } catch (e) { /* sin cuerpo */ }
+      if (!r.ok) { mostrar(textoDeError(r.status, json), 'err'); return; }
+
+      var rx = await fetch('/api/v1/invoices/' + json.id + '/xml', { headers: { 'Authorization': cab.Authorization } });
+      if (!rx.ok) { mostrar('No se pudo obtener el XML (' + rx.status + ').', 'err'); return; }
+      ultimoXml = { bytes: await rx.arrayBuffer(), nombre: json.nombreArchivo + '.xml' };
+      // El XML se escribe en ISO-8859-1 (SUNAT). Se muestra decodificado como tal para que no se corrompan las tildes.
+      $('xml').value = new TextDecoder('iso-8859-1').decode(ultimoXml.bytes);
+
+      var t = json.totales, mon = json.moneda;
+      var filas = [['Comprobante', json.serieNumero], ['Archivo', json.nombreArchivo],
+        ['Gravadas', t.gravadas], ['Exoneradas', t.exoneradas], ['Inafectas', t.inafectas], ['Gratuitas', t.gratuitas],
+        ['IGV', t.igv], ['ICBPER', t.icbper], ['Importe total (' + mon + ')', t.importeTotal]];
+      $('resumen').innerHTML = '';
+      filas.forEach(function (f) {
+        var dt = document.createElement('dt'); dt.textContent = f[0];
+        var dd = document.createElement('dd'); dd.textContent = typeof f[1] === 'number' ? f[1].toFixed(2) : f[1];
+        $('resumen').appendChild(dt); $('resumen').appendChild(dd);
+      });
+      $('resultado').classList.remove('hidden');
+      mostrar('Listo: ' + json.serieNumero + ' generado, firmado y valido contra UBL-Invoice-2.1.xsd.', 'ok');
+      $('resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      mostrar('No se pudo conectar con la API: ' + e.message, 'err');
+    } finally {
+      boton.disabled = false;
+    }
+  }
+
+  async function copiar() {
+    var texto = $('xml').value;
+    try { await navigator.clipboard.writeText(texto); }
+    catch (e) { $('xml').select(); document.execCommand('copy'); }
+    $('copiar').textContent = 'Copiado';
+    setTimeout(function () { $('copiar').textContent = 'Copiar XML'; }, 1800);
+  }
+
+  function descargar() {
+    if (!ultimoXml) return;
+    var url = URL.createObjectURL(new Blob([ultimoXml.bytes], { type: 'application/xml' }));
+    var a = document.createElement('a');
+    a.href = url; a.download = ultimoXml.nombre;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  $('agregar').addEventListener('click', function () { agregarItem(); });
+  $('ejemplo').addEventListener('click', cargarEjemplo);
+  $('generar').addEventListener('click', generar);
+  $('tipo').addEventListener('change', function () { $('serie').value = serieAleatoria(); });
+  $('copiar').addEventListener('click', copiar);
+  $('descargar').addEventListener('click', descargar);
+  $('nubefact').addEventListener('click', function () { window.open('https://probar-xml.nubefact.com', '_blank', 'noopener'); });
+  cargarEjemplo();
+})();
+</script>
+</body>
+</html>

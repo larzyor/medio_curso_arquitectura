@@ -65,6 +65,8 @@ builder.Services.AddSingleton<IMigrarDatosLegadosUseCase, MigrarDatosLegadosServ
 
 var app = builder.Build();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseDefaultFiles();   // sirve wwwroot/index.html: interfaz web para emitir comprobantes y copiar el XML
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
